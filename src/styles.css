@@ -1,0 +1,153 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+}
+
+:root {
+  --radius: 0.5rem;
+
+  /* Prestige Locations — noir & or */
+  --background: oklch(0.13 0.005 80);
+  --foreground: oklch(0.97 0.005 80);
+  --card: oklch(0.17 0.006 80);
+  --card-foreground: oklch(0.97 0.005 80);
+  --popover: oklch(0.17 0.006 80);
+  --popover-foreground: oklch(0.97 0.005 80);
+  --primary: oklch(0.76 0.12 78);
+  --primary-foreground: oklch(0.15 0.02 80);
+  --secondary: oklch(0.22 0.008 80);
+  --secondary-foreground: oklch(0.97 0.005 80);
+  --muted: oklch(0.22 0.008 80);
+  --muted-foreground: oklch(0.72 0.01 80);
+  --accent: oklch(0.76 0.12 78);
+  --accent-foreground: oklch(0.15 0.02 80);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.97 0.005 80);
+  --border: oklch(0.3 0.02 80);
+  --input: oklch(0.3 0.02 80);
+  --ring: oklch(0.76 0.12 78);
+  --surface: oklch(0.1 0.004 80);
+  --surface-elevated: oklch(0.2 0.007 80);
+
+  --gradient-gold: linear-gradient(135deg, oklch(0.76 0.12 78), oklch(0.68 0.11 70));
+  --shadow-gold: 0 10px 40px -12px oklch(0.76 0.12 78 / 0.35);
+  --overlay-hero: linear-gradient(
+    to right,
+    oklch(0.1 0.004 80 / 0.95) 0%,
+    oklch(0.1 0.004 80 / 0.75) 40%,
+    oklch(0.1 0.004 80 / 0.15) 100%
+  );
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@utility btn-gold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-md);
+  background: var(--gradient-gold);
+  color: var(--primary-foreground);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  padding: 0.9rem 1.6rem;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+  box-shadow: var(--shadow-gold);
+
+  &:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+}
+
+@utility btn-gold-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  padding: 0.7rem 1.3rem;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+
+  &:hover {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+}
+
+@utility title-rule {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+
+  &::before,
+  &::after {
+    content: "";
+    height: 1px;
+    width: 3.5rem;
+    background: var(--primary);
+    opacity: 0.7;
+  }
+}
