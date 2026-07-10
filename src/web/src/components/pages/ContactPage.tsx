@@ -1,12 +1,22 @@
 import { Mail, MapPin, Phone } from "lucide-react";
 import { useState } from "react";
 import { SectionTitle } from "@/components/site/SectionTitle";
-import { useT } from "@/lib/i18n";
+import { useLang, useT } from "@/lib/i18n";
+import { useCatalog } from "@/lib/useCatalog";
 import { EMAIL, PHONE_DISPLAY, PHONE_HREF } from "@/lib/site";
 
 export function ContactPage() {
+  const lang = useLang();
   const t = useT();
+  const { equipments } = useCatalog();
   const [sent, setSent] = useState(false);
+
+  const equipmentOptions = [
+    ...equipments
+      .filter((e) => e.featured && e.status === "disponible")
+      .map((e) => (e.formLabel ?? e.name)[lang]),
+    t.contactPage.otherOption,
+  ];
 
   const infos = [
     {
@@ -142,7 +152,7 @@ export function ContactPage() {
                   name="equipement"
                   className="w-full rounded-md border border-input bg-background px-3.5 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 >
-                  {t.contactPage.equipmentOptions.map((option) => (
+                  {equipmentOptions.map((option) => (
                     <option key={option}>{option}</option>
                   ))}
                 </select>

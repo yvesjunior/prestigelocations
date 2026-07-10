@@ -14,9 +14,11 @@ import { Route as ServicesRouteImport } from './routes/services'
 import { Route as EquipementsRouteImport } from './routes/equipements'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AProposRouteImport } from './routes/a-propos'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FrIndexRouteImport } from './routes/fr/index'
 import { Route as EnIndexRouteImport } from './routes/en/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as FrServicesRouteImport } from './routes/fr/services'
 import { Route as FrEquipementsRouteImport } from './routes/fr/equipements'
 import { Route as FrContactRouteImport } from './routes/fr/contact'
@@ -25,6 +27,14 @@ import { Route as EnServicesRouteImport } from './routes/en/services'
 import { Route as EnEquipmentRouteImport } from './routes/en/equipment'
 import { Route as EnContactRouteImport } from './routes/en/contact'
 import { Route as EnAboutRouteImport } from './routes/en/about'
+import { Route as AdminMonCompteRouteImport } from './routes/admin/mon-compte'
+import { Route as AdminLoginRouteImport } from './routes/admin/login'
+import { Route as AdminEmployesRouteImport } from './routes/admin/employes'
+import { Route as AdminCategoriesRouteImport } from './routes/admin/categories'
+import { Route as AdminApparenceRouteImport } from './routes/admin/apparence'
+import { Route as AdminEquipementsIndexRouteImport } from './routes/admin/equipements/index'
+import { Route as AdminEquipementsNouveauRouteImport } from './routes/admin/equipements/nouveau'
+import { Route as AdminEquipementsIdRouteImport } from './routes/admin/equipements/$id'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -51,6 +61,11 @@ const AProposRoute = AProposRouteImport.update({
   path: '/a-propos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -65,6 +80,11 @@ const EnIndexRoute = EnIndexRouteImport.update({
   id: '/en/',
   path: '/en/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const FrServicesRoute = FrServicesRouteImport.update({
   id: '/fr/services',
@@ -106,14 +126,60 @@ const EnAboutRoute = EnAboutRouteImport.update({
   path: '/en/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminMonCompteRoute = AdminMonCompteRouteImport.update({
+  id: '/mon-compte',
+  path: '/mon-compte',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminEmployesRoute = AdminEmployesRouteImport.update({
+  id: '/employes',
+  path: '/employes',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminApparenceRoute = AdminApparenceRouteImport.update({
+  id: '/apparence',
+  path: '/apparence',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminEquipementsIndexRoute = AdminEquipementsIndexRouteImport.update({
+  id: '/equipements/',
+  path: '/equipements/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminEquipementsNouveauRoute = AdminEquipementsNouveauRouteImport.update({
+  id: '/equipements/nouveau',
+  path: '/equipements/nouveau',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminEquipementsIdRoute = AdminEquipementsIdRouteImport.update({
+  id: '/equipements/$id',
+  path: '/equipements/$id',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/a-propos': typeof AProposRoute
   '/contact': typeof ContactRoute
   '/equipements': typeof EquipementsRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/apparence': typeof AdminApparenceRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/employes': typeof AdminEmployesRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/mon-compte': typeof AdminMonCompteRoute
   '/en/about': typeof EnAboutRoute
   '/en/contact': typeof EnContactRoute
   '/en/equipment': typeof EnEquipmentRoute
@@ -122,8 +188,12 @@ export interface FileRoutesByFullPath {
   '/fr/contact': typeof FrContactRoute
   '/fr/equipements': typeof FrEquipementsRoute
   '/fr/services': typeof FrServicesRoute
+  '/admin/': typeof AdminIndexRoute
   '/en/': typeof EnIndexRoute
   '/fr/': typeof FrIndexRoute
+  '/admin/equipements/$id': typeof AdminEquipementsIdRoute
+  '/admin/equipements/nouveau': typeof AdminEquipementsNouveauRoute
+  '/admin/equipements/': typeof AdminEquipementsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -132,6 +202,11 @@ export interface FileRoutesByTo {
   '/equipements': typeof EquipementsRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/apparence': typeof AdminApparenceRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/employes': typeof AdminEmployesRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/mon-compte': typeof AdminMonCompteRoute
   '/en/about': typeof EnAboutRoute
   '/en/contact': typeof EnContactRoute
   '/en/equipment': typeof EnEquipmentRoute
@@ -140,17 +215,27 @@ export interface FileRoutesByTo {
   '/fr/contact': typeof FrContactRoute
   '/fr/equipements': typeof FrEquipementsRoute
   '/fr/services': typeof FrServicesRoute
+  '/admin': typeof AdminIndexRoute
   '/en': typeof EnIndexRoute
   '/fr': typeof FrIndexRoute
+  '/admin/equipements/$id': typeof AdminEquipementsIdRoute
+  '/admin/equipements/nouveau': typeof AdminEquipementsNouveauRoute
+  '/admin/equipements': typeof AdminEquipementsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/a-propos': typeof AProposRoute
   '/contact': typeof ContactRoute
   '/equipements': typeof EquipementsRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/apparence': typeof AdminApparenceRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/employes': typeof AdminEmployesRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/mon-compte': typeof AdminMonCompteRoute
   '/en/about': typeof EnAboutRoute
   '/en/contact': typeof EnContactRoute
   '/en/equipment': typeof EnEquipmentRoute
@@ -159,18 +244,28 @@ export interface FileRoutesById {
   '/fr/contact': typeof FrContactRoute
   '/fr/equipements': typeof FrEquipementsRoute
   '/fr/services': typeof FrServicesRoute
+  '/admin/': typeof AdminIndexRoute
   '/en/': typeof EnIndexRoute
   '/fr/': typeof FrIndexRoute
+  '/admin/equipements/$id': typeof AdminEquipementsIdRoute
+  '/admin/equipements/nouveau': typeof AdminEquipementsNouveauRoute
+  '/admin/equipements/': typeof AdminEquipementsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/a-propos'
     | '/contact'
     | '/equipements'
     | '/services'
     | '/sitemap.xml'
+    | '/admin/apparence'
+    | '/admin/categories'
+    | '/admin/employes'
+    | '/admin/login'
+    | '/admin/mon-compte'
     | '/en/about'
     | '/en/contact'
     | '/en/equipment'
@@ -179,8 +274,12 @@ export interface FileRouteTypes {
     | '/fr/contact'
     | '/fr/equipements'
     | '/fr/services'
+    | '/admin/'
     | '/en/'
     | '/fr/'
+    | '/admin/equipements/$id'
+    | '/admin/equipements/nouveau'
+    | '/admin/equipements/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -189,6 +288,11 @@ export interface FileRouteTypes {
     | '/equipements'
     | '/services'
     | '/sitemap.xml'
+    | '/admin/apparence'
+    | '/admin/categories'
+    | '/admin/employes'
+    | '/admin/login'
+    | '/admin/mon-compte'
     | '/en/about'
     | '/en/contact'
     | '/en/equipment'
@@ -197,16 +301,26 @@ export interface FileRouteTypes {
     | '/fr/contact'
     | '/fr/equipements'
     | '/fr/services'
+    | '/admin'
     | '/en'
     | '/fr'
+    | '/admin/equipements/$id'
+    | '/admin/equipements/nouveau'
+    | '/admin/equipements'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/a-propos'
     | '/contact'
     | '/equipements'
     | '/services'
     | '/sitemap.xml'
+    | '/admin/apparence'
+    | '/admin/categories'
+    | '/admin/employes'
+    | '/admin/login'
+    | '/admin/mon-compte'
     | '/en/about'
     | '/en/contact'
     | '/en/equipment'
@@ -215,12 +329,17 @@ export interface FileRouteTypes {
     | '/fr/contact'
     | '/fr/equipements'
     | '/fr/services'
+    | '/admin/'
     | '/en/'
     | '/fr/'
+    | '/admin/equipements/$id'
+    | '/admin/equipements/nouveau'
+    | '/admin/equipements/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
   AProposRoute: typeof AProposRoute
   ContactRoute: typeof ContactRoute
   EquipementsRoute: typeof EquipementsRoute
@@ -275,6 +394,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AProposRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -295,6 +421,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/en/'
       preLoaderRoute: typeof EnIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/fr/services': {
       id: '/fr/services'
@@ -352,11 +485,96 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EnAboutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/mon-compte': {
+      id: '/admin/mon-compte'
+      path: '/mon-compte'
+      fullPath: '/admin/mon-compte'
+      preLoaderRoute: typeof AdminMonCompteRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/employes': {
+      id: '/admin/employes'
+      path: '/employes'
+      fullPath: '/admin/employes'
+      preLoaderRoute: typeof AdminEmployesRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/categories': {
+      id: '/admin/categories'
+      path: '/categories'
+      fullPath: '/admin/categories'
+      preLoaderRoute: typeof AdminCategoriesRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/apparence': {
+      id: '/admin/apparence'
+      path: '/apparence'
+      fullPath: '/admin/apparence'
+      preLoaderRoute: typeof AdminApparenceRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/equipements/': {
+      id: '/admin/equipements/'
+      path: '/equipements'
+      fullPath: '/admin/equipements/'
+      preLoaderRoute: typeof AdminEquipementsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/equipements/nouveau': {
+      id: '/admin/equipements/nouveau'
+      path: '/equipements/nouveau'
+      fullPath: '/admin/equipements/nouveau'
+      preLoaderRoute: typeof AdminEquipementsNouveauRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/equipements/$id': {
+      id: '/admin/equipements/$id'
+      path: '/equipements/$id'
+      fullPath: '/admin/equipements/$id'
+      preLoaderRoute: typeof AdminEquipementsIdRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
   }
 }
 
+interface AdminRouteRouteChildren {
+  AdminApparenceRoute: typeof AdminApparenceRoute
+  AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminEmployesRoute: typeof AdminEmployesRoute
+  AdminLoginRoute: typeof AdminLoginRoute
+  AdminMonCompteRoute: typeof AdminMonCompteRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminEquipementsIdRoute: typeof AdminEquipementsIdRoute
+  AdminEquipementsNouveauRoute: typeof AdminEquipementsNouveauRoute
+  AdminEquipementsIndexRoute: typeof AdminEquipementsIndexRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminApparenceRoute: AdminApparenceRoute,
+  AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminEmployesRoute: AdminEmployesRoute,
+  AdminLoginRoute: AdminLoginRoute,
+  AdminMonCompteRoute: AdminMonCompteRoute,
+  AdminIndexRoute: AdminIndexRoute,
+  AdminEquipementsIdRoute: AdminEquipementsIdRoute,
+  AdminEquipementsNouveauRoute: AdminEquipementsNouveauRoute,
+  AdminEquipementsIndexRoute: AdminEquipementsIndexRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
   AProposRoute: AProposRoute,
   ContactRoute: ContactRoute,
   EquipementsRoute: EquipementsRoute,

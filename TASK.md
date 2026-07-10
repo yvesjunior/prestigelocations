@@ -25,16 +25,17 @@
 
 > **Reprendre ici.** Mettre à jour ce bloc à chaque session (2 lignes max).
 
-- **En cours** : rien — Phase 1 (Docker) terminée et vérifiée le 2026-07-10.
-- **Prochaine étape** : Phase 2 (Catalogue) ; la Phase 3 (ImageKit) attend 🧍 la création
-  du compte.
+- **En cours** : Phase 4 — il reste 4B.3 (demandes), 4B.4 (calendrier), 4B.5 (rapports) ;
+  l'upload photo attend 🧍 le compte ImageKit (Phase 3).
+- **Fait le 2026-07-10** : Phase 2 (catalogue), 4A (BD seedée, site public sourcé BD),
+  4B.1 (auth employés), 4B.2 (CRUD équipements/catégories sans photos), 4B.6 (apparence).
 
 ## État actuel
 
 - Site vitrine bilingue FR/EN fonctionnel en développement (TanStack Start / React 19, SSR,
   Tailwind 4) : 5 pages × 2 langues, sélecteur de langue, redirections 301, meta/OG traduits,
   sitemap XML. Textes centralisés dans `src/web/src/lib/i18n.ts` (dictionnaires fr/en typés).
-- Réservation : formulaire → courriel au gérant (`mailto:`), pas d'envoi serveur.
+- Réservation : formulaire → courriel au gérant (`mailto:`), pas d'envoi serveur (4B.3 à faire).
 - Dépôt restructuré : app web dans `src/web/`, dossiers `infra/` et `scripts/` créés,
   scripts npm proxy à la racine (`npm run dev|build|lint`).
 - **Docker opérationnel (Phase 1 faite)** : `infra/docker/web.Dockerfile` (multi-étapes,
@@ -43,7 +44,19 @@
 - **Lovable retiré** : `vite.config.ts` est une config standard (tanstackStart + nitro
   `node-server` explicite + react + tailwind + tsconfig-paths, port 8080) ; le wrapper
   d'erreurs SSR (`src/server.ts`, `error-capture`, `error-page`) est conservé.
-- Pas de BD ni d'environnement de production.
+- **BD opérationnelle (4A)** : monorepo npm workspaces, paquet `@prestige/database`
+  (Drizzle, migrations dans `src/database/migrations/`, `seed.ts` idempotent), service `db`
+  dans compose, `npm run db:setup` (migrate + seed). Le site public lit la BD via server
+  functions (cache 60 s) avec **repli sur `catalog.ts`** si BD indisponible.
+- **Admin `/admin` en ligne (4B.1, 4B.2, 4B.6)** : auth sessions/rôles conforme à la spec
+  (login, logout, mon-compte, employés superadmin), CRUD équipements (statut, featured,
+  publié, ordre — photos en attente d'ImageKit), édition catégories, page Apparence
+  (curseurs + préréglages Or/Vert/Rouge/Bleu + reset) publiée en SSR sur le site.
+- ⚠️ Piège à connaître : les fichiers `src/web/src/server/*.ts` sont des wrappers
+  client-safe — **tout code serveur (BD, cookies) doit passer par un import dynamique dans
+  le handler** (voir `src/server/impl/*`), sinon la protection d'imports casse le client.
+- ⚠️ Reste à automatiser : les migrations/seed ne tournent pas encore au démarrage du
+  conteneur (fait à la main via `npm run db:setup`) — à régler en Phase 5.
 
 ## Structure du dépôt
 
@@ -64,7 +77,7 @@ Projet-Prestige_Locations/
 │   └── backup.sh               # Sauvegarde (config, volumes, pg_dump)
 ├── src/
 │   ├── web/                    # Application web (TanStack Start) : site public + /admin
-│   └── database/               # BD (à remplir en Phase 4 : schéma, migrations, seed)
+│   └── database/               # ✔ BD : schéma Drizzle, migrations, seed
 ├── package.json                # Scripts proxy (dev/build/lint → src/web)
 ├── PROJET.md                   # Cadrage client (gelé)
 └── TASK.md
@@ -254,6 +267,8 @@ confirmer avec le client si des prix seront affichés un jour.
 | `admin/AvailabilityCalendar` *(à créer, Phase 4)* | Indisponibilités par équipement | BD (equipment_unavailabilities) |
 | `AvailabilityPicker` *(à créer, Phase 4)* | Choix de dates du formulaire public (jours grisés) | BD via `getUnavailableDates` |
 | `admin/Reports` *(à créer, Phase 4)* | Rapports/analyse des demandes, export CSV | BD (reservation_requests) |
+| `admin/ThemeSettings` *(à créer, Phase 4)* | Thème du site : curseurs + préréglages + reset | BD (settings) |
+| `dev/ThemeTweaker` ✔ | Panneau de réglage local (dev uniquement) | variables CSS |
 | `ui/*` | Bibliothèque shadcn/ui (boutons, formulaires…) | — |
 
 ---
@@ -296,12 +311,12 @@ BD en Phase 4.
 
 ### Tâches
 
-- [ ] `catalog.ts` : types + 3 catégories + 12 équipements.
-- [ ] Refactor `CategoriesSection` / `CategoryCard`.
-- [ ] Refactor `EquipmentPage`.
-- [ ] Options du formulaire de contact générées du catalogue.
+- [x] `catalog.ts` : types + 3 catégories + 12 équipements.
+- [x] Refactor `CategoriesSection` / `CategoryCard`.
+- [x] Refactor `EquipmentPage`.
+- [x] Options du formulaire de contact générées du catalogue.
 - [ ] Nettoyage des dictionnaires i18n.
-- [ ] Statuts affichés depuis le catalogue (`bientôt disponible`, `sur demande`).
+- [x] Statuts affichés depuis le catalogue (`bientôt disponible`, `sur demande`).
 
 **Fait quand** : aucune donnée d'équipement ne subsiste dans `i18n.ts` ; le rendu FR/EN est
 identique à l'existant.
@@ -403,6 +418,7 @@ Layout `/admin` : barre latérale (repliée en menu sur mobile) — **Tableau de
 | `/admin/demandes` | Demandes | Liste filtrable, changement de statut, action « bloquer ces dates » |
 | `/admin/calendrier` | Calendrier | Indisponibilités par équipement (vue mensuelle) |
 | `/admin/rapports` | Rapports | Compteurs par période, répartition, export CSV |
+| `/admin/apparence` | Apparence | Thème du site : curseurs (fonds, chaleur, teinte, accent), préréglages de couleur d'accent (Or — défaut, Vert, Rouge, Bleu…), aperçu en direct, « Enregistrer » et « Réinitialiser » (retour au thème par défaut) |
 | `/admin/employes` | Employés | superadmin : création, rôle, activation, reset mot de passe |
 | `/admin/mon-compte` | Mon compte | Changement de son mot de passe |
 
@@ -425,6 +441,8 @@ valide et le rôle indiqué (voir matrice « Acteurs »).
 | `list/create/updateUser`, `resetUserPassword` | superadmin | → entité | jamais de suppression, `active` seulement |
 | `getReport(period)`, `exportRequestsCsv(period)` | accountant+ | → agrégats / CSV | volume, répartition équipement/catégorie |
 | `getImageKitSignature()` | admin+ | → `{signature, token, expire}` | la clé privée reste serveur |
+| `getTheme()` | public | — → config thème (ou défaut) | injectée en variables CSS au SSR (root), cache 60 s |
+| `updateTheme(config)` / `resetTheme()` | admin+ | config zod-validée → `{ok}` | reset = suppression de la ligne `settings.theme` ; invalide le cache |
 
 ### Choix
 
@@ -538,6 +556,18 @@ Index : `equipment_unavailabilities(equipment_id, start_date, end_date)`.
 Lecture publique : server function `getUnavailableDates(equipmentSlug, fromMonth)` qui ne
 renvoie **que les dates** (jamais les raisons/notes).
 
+#### `settings` — réglages de la plateforme (dont le thème)
+
+| Colonne | Type | Contraintes | Description |
+|---|---|---|---|
+| `key` | text | PK | Ex. `theme` |
+| `value` | jsonb | not null | Pour `theme` : `{bgL, surfaceL, cardL, accentL, borderL, warmth, hue, goldL, goldC, goldH}` |
+| `updated_at` / `updated_by` | timestamptz / FK → users, null | | Traçabilité |
+
+Pas de seed : en l'absence de ligne `theme`, le site utilise le **thème par défaut**
+codé en dur (constante `DEFAULT_THEME` — les valeurs actuelles de `styles.css`, validées
+le 2026-07-10). « Réinitialiser » dans l'admin supprime la ligne (retour au défaut).
+
 #### `sessions`
 
 | Colonne | Type | Contraintes | Description |
@@ -640,14 +670,14 @@ pour les accueillir.
 **4A — Base de données** *(fait quand : le site public rend le même contenu qu'avant, sourcé
 depuis la BD ; `docker compose down -v && up` re-seed proprement)*
 
-- [ ] Workspaces + paquet `@prestige/database` (schéma, migration initiale).
-- [ ] Service `db` dans compose (base + overlay dev :5432) + `DATABASE_URL`.
-- [ ] `seed.ts` idempotent (catalogue + superadmin).
-- [ ] Site public lit la BD : `db.ts`, `catalog-server.ts` (cache 60 s), `getCatalog()`.
+- [x] Workspaces + paquet `@prestige/database` (schéma, migration initiale).
+- [x] Service `db` dans compose (base + overlay dev :5432) + `DATABASE_URL`.
+- [x] `seed.ts` idempotent (catalogue + superadmin).
+- [x] Site public lit la BD : `db.ts`, `catalog-server.ts` (cache 60 s), `getCatalog()`.
 
 **4B.1 — Authentification** *(fait quand : la recette « auth » ci-dessous passe)*
 
-- [ ] `lib/auth.ts` (hash, sessions, `requireUser(role)`) + `lib/rate-limit.ts`.
+- [x] `lib/auth.ts` (hash, sessions, `requireUser(role)`) + `lib/rate-limit.ts`.
 - [ ] `/admin/login`, layout protégé, déconnexion, « Mon compte » (changement de mot de
       passe), conforme à la spécification ci-dessus.
 - [ ] Comptes employés (`/admin/employes`, superadmin) : création, rôle,
@@ -683,6 +713,21 @@ téléchargeable ; accessible au rôle `accountant`)*
 
 - [ ] `/admin/rapports` : volume par période, répartition équipement/catégorie, export CSV.
 
+**4B.6 — Apparence (thème)** *(fait quand : changer un curseur ou un préréglage dans
+l'admin change le site public après enregistrement ; « Réinitialiser » revient au thème
+par défaut)*
+
+- [ ] Extraire la logique du panneau dev (`ThemeTweaker`) vers un module partagé
+      `theme.ts` : type `ThemeConfig`, constante `DEFAULT_THEME` (valeurs validées de
+      `styles.css`), fonction `themeToCssVars(config)`.
+- [ ] `getTheme()` injecté au SSR dans le `<html>` (style inline des variables CSS sur
+      `:root`) — le site public reflète le thème BD sans flash.
+- [ ] `/admin/apparence` : mêmes curseurs que le panneau dev + **préréglages d'accent**
+      (Or — défaut, Vert, Rouge, Bleu ; chacun = `{goldL, goldC, goldH}` prédéfini, ex.
+      vert ≈ hue 150, rouge ≈ hue 25, bleu ≈ hue 250), aperçu en direct avant
+      enregistrement, `updateTheme` / `resetTheme`.
+- [ ] Le panneau dev reste pour le prototypage local ; l'admin devient la voie officielle.
+
 ### Recette manuelle (avant de clore la phase)
 
 1. **Auth** : 5 mauvais mots de passe → blocage 15 min ; bon mot de passe → `/admin` ;
@@ -702,9 +747,11 @@ téléchargeable ; accessible au rôle `accountant`)*
 7. **Rapports** : compteurs cohérents avec la BD ; export CSV lisible.
 8. **From scratch** : `docker compose down -v && up` → site seedé fonctionnel + login
    superadmin.
-9. **Mobile** : tout le parcours admin au viewport 375 px.
+9. **Apparence** : appliquer le préréglage « Vert » → le site public change après
+   enregistrement ; « Réinitialiser » → retour exact au thème par défaut.
+10. **Mobile** : tout le parcours admin au viewport 375 px.
 
-**Fait quand** : les 9 points de recette passent ; `docker compose up` neuf (volumes vides)
+**Fait quand** : les 10 points de recette passent ; `docker compose up` neuf (volumes vides)
 aboutit à un site fonctionnel seedé.
 
 ---

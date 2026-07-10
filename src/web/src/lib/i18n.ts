@@ -62,6 +62,7 @@ const fr = {
     eyebrow: "Nos équipements",
     title: "Trois catégories",
     subtitle: "Pour répondre à tous vos besoins",
+    andMore: "Et plus encore",
     categories: [
       {
         title: "Machinerie",
@@ -317,6 +318,7 @@ const fr = {
       "Marteau-piqueur",
       "Autre / plusieurs équipements",
     ],
+    otherOption: "Autre / plusieurs équipements",
     messageLabel: "Message",
     messagePlaceholder: "Dates souhaitées, durée de location, détails du projet...",
     submit: "Envoyer ma demande",
@@ -372,6 +374,7 @@ const en: Dict = {
     eyebrow: "Our equipment",
     title: "Three categories",
     subtitle: "To meet all your needs",
+    andMore: "And more",
     categories: [
       {
         title: "Machinery",
@@ -620,6 +623,7 @@ const en: Dict = {
       "Jackhammer",
       "Other / multiple items",
     ],
+    otherOption: "Other / multiple items",
     messageLabel: "Message",
     messagePlaceholder: "Desired dates, rental duration, project details...",
     submit: "Send my request",

@@ -3,6 +3,7 @@ import {
   Outlet,
   Link,
   createRootRouteWithContext,
+  useLocation,
   useRouter,
   HeadContent,
   Scripts,
@@ -12,6 +13,9 @@ import type { ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
+import { ThemeTweaker } from "@/components/dev/ThemeTweaker";
+import { getThemeFn } from "@/server/public";
+import { themeToCss } from "@/lib/theme";
 import { pagePaths, useLang, useT } from "@/lib/i18n";
 
 function NotFoundComponent() {
@@ -66,6 +70,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // Thème (BD, cache 60 s) injecté en variables CSS — l'admin est la source de vérité.
+  loader: async () => ({ theme: await getThemeFn() }),
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -123,17 +129,27 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { theme } = Route.useLoaderData();
+  const pathname = useLocation({ select: (l) => l.pathname });
+  const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <main className="flex-1">
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-        </main>
-        <Footer />
-      </div>
+      {/* Variables CSS du thème (SSR) — priment sur les valeurs de styles.css */}
+      <style dangerouslySetInnerHTML={{ __html: themeToCss(theme) }} />
+      {isAdmin ? (
+        <Outlet />
+      ) : (
+        <div className="flex min-h-screen flex-col">
+          <Header />
+          <main className="flex-1">
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+          </main>
+          <Footer />
+        </div>
+      )}
+      {import.meta.env.DEV && !isAdmin && <ThemeTweaker />}
     </QueryClientProvider>
   );
 }
