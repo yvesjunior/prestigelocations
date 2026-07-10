@@ -1,0 +1,5 @@
+# Overlay dev — publie les ports sur la machine locale.
+services:
+  web:
+    ports:
+      - "3000:3000"

@@ -1,0 +1,20 @@
+# Base commune dev/prod — aucun port publié ici (voir les overlays .dev / .prod).
+# Toujours lancer depuis la racine du dépôt :
+#   docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.dev.yml up
+
+name: prestige-locations
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        VITE_BASE_URL: ${VITE_BASE_URL:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/fr"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
