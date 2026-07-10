@@ -3,3 +3,6 @@ services:
   web:
     ports:
       - "3000:3000"
+  db:
+    ports:
+      - "5432:5432"

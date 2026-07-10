@@ -1,12 +1,18 @@
 {
   "name": "prestige-locations",
   "private": true,
+  "workspaces": [
+    "src/*"
+  ],
   "scripts": {
-    "dev": "npm --prefix src/web run dev",
-    "build": "npm --prefix src/web run build",
-    "preview": "npm --prefix src/web run preview",
-    "lint": "npm --prefix src/web run lint",
-    "format": "npm --prefix src/web run format",
-    "install:web": "npm --prefix src/web install"
+    "dev": "npm run dev -w @prestige/web",
+    "build": "npm run build -w @prestige/web",
+    "preview": "npm run preview -w @prestige/web",
+    "lint": "npm run lint -w @prestige/web",
+    "format": "npm run format -w @prestige/web",
+    "db:generate": "npm run generate -w @prestige/database",
+    "db:migrate": "npm run migrate -w @prestige/database",
+    "db:seed": "npm run seed -w @prestige/database",
+    "db:setup": "npm run setup -w @prestige/database"
   }
 }
