@@ -38,36 +38,40 @@
 :root {
   --radius: 0.5rem;
 
-  /* Prestige Locations — noir & or */
-  --background: oklch(0.13 0.005 80);
-  --foreground: oklch(0.97 0.005 80);
-  --card: oklch(0.17 0.006 80);
-  --card-foreground: oklch(0.97 0.005 80);
-  --popover: oklch(0.17 0.006 80);
-  --popover-foreground: oklch(0.97 0.005 80);
-  --primary: oklch(0.76 0.12 78);
-  --primary-foreground: oklch(0.15 0.02 80);
-  --secondary: oklch(0.22 0.008 80);
-  --secondary-foreground: oklch(0.97 0.005 80);
-  --muted: oklch(0.22 0.008 80);
-  --muted-foreground: oklch(0.72 0.01 80);
-  --accent: oklch(0.76 0.12 78);
-  --accent-foreground: oklch(0.15 0.02 80);
+  /* Prestige Locations — thème par défaut validé par Yves (2026-07-10).
+     Source : panneau de réglage dev — { bgL: 0.05, surfaceL: 0.08, cardL: 0.17,
+     accentL: 0.2, borderL: 0.28, warmth: 0.005, hue: 75, goldL: 0.72,
+     goldC: 0.155, goldH: 73 }. C'est aussi la cible du « reset » de la future
+     page Apparence de l'admin (Phase 4). */
+  --background: oklch(0.05 0.005 75);
+  --foreground: oklch(0.97 0.004 80);
+  --card: oklch(0.17 0.006 75);
+  --card-foreground: oklch(0.97 0.004 80);
+  --popover: oklch(0.17 0.006 75);
+  --popover-foreground: oklch(0.97 0.004 80);
+  --primary: oklch(0.72 0.155 73);
+  --primary-foreground: oklch(0.17 0.02 78);
+  --secondary: oklch(0.2 0.0075 75);
+  --secondary-foreground: oklch(0.97 0.004 80);
+  --muted: oklch(0.2 0.0075 75);
+  --muted-foreground: oklch(0.73 0.01 78);
+  --accent: oklch(0.72 0.155 73);
+  --accent-foreground: oklch(0.17 0.02 78);
   --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.97 0.005 80);
-  --border: oklch(0.3 0.02 80);
-  --input: oklch(0.3 0.02 80);
-  --ring: oklch(0.76 0.12 78);
-  --surface: oklch(0.1 0.004 80);
-  --surface-elevated: oklch(0.2 0.007 80);
+  --destructive-foreground: oklch(0.97 0.004 80);
+  --border: oklch(0.28 0.0125 75);
+  --input: oklch(0.28 0.0125 75);
+  --ring: oklch(0.72 0.155 73);
+  --surface: oklch(0.08 0.005 75);
+  --surface-elevated: oklch(0.2 0.0065 75);
 
-  --gradient-gold: linear-gradient(135deg, oklch(0.76 0.12 78), oklch(0.68 0.11 70));
-  --shadow-gold: 0 10px 40px -12px oklch(0.76 0.12 78 / 0.35);
+  --gradient-gold: linear-gradient(135deg, oklch(0.74 0.155 76), oklch(0.66 0.155 66));
+  --shadow-gold: 0 10px 40px -12px oklch(0.72 0.155 73 / 0.35);
   --overlay-hero: linear-gradient(
     to right,
-    oklch(0.1 0.004 80 / 0.95) 0%,
-    oklch(0.1 0.004 80 / 0.75) 40%,
-    oklch(0.1 0.004 80 / 0.15) 100%
+    oklch(0.08 0.005 75 / 0.95) 0%,
+    oklch(0.08 0.005 75 / 0.72) 40%,
+    oklch(0.08 0.005 75 / 0.12) 100%
   );
 }
 
