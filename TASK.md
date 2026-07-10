@@ -12,9 +12,9 @@
   `npm run dev` à la racine (proxy vers `src/web`, port 8080).
 - **Qualité** : avant de terminer une tâche → `npx tsc --noEmit` et `npx eslint` sur les
   fichiers touchés (le dépôt a du bruit CRLF pré-existant : ne corriger que ses fichiers).
-- **Git** : le dépôt est connecté à Lovable → jamais de réécriture d'historique (pas de
-  force-push/rebase de commits poussés). Commits au format Conventional Commits, sans
-  mention d'IA. Ne commiter que sur demande explicite.
+- **Git** : jamais de réécriture d'historique poussé (pas de force-push/rebase de commits
+  publiés). Commits au format Conventional Commits, sans mention d'IA. Ne commiter que sur
+  demande explicite. (La connexion Lovable a été retirée — tout se gère ici.)
 - **Cycle de vie de ce fichier** : quand une phase est terminée et vérifiée, **la supprimer
   de TASK.md** et mettre à jour « État actuel ». Les décisions prises en cours de route
   s'ajoutent dans les tableaux « Choix ».
@@ -40,8 +40,9 @@
 - **Docker opérationnel (Phase 1 faite)** : `infra/docker/web.Dockerfile` (multi-étapes,
   non-root), compose base + overlay dev, healthcheck sur `/fr`, `.env.example` créé,
   `site.ts` lit `VITE_BASE_URL`. Vérifié : FR/EN 200, 301, sitemap, conteneur healthy.
-- ⚠️ La config Lovable fait cibler **Cloudflare Workers** à Nitro par défaut — le preset
-  `node-server` est forcé par `ENV NITRO_PRESET` dans le Dockerfile (ne pas retirer).
+- **Lovable retiré** : `vite.config.ts` est une config standard (tanstackStart + nitro
+  `node-server` explicite + react + tailwind + tsconfig-paths, port 8080) ; le wrapper
+  d'erreurs SSR (`src/server.ts`, `error-capture`, `error-page`) est conservé.
 - Pas de BD ni d'environnement de production.
 
 ## Structure du dépôt

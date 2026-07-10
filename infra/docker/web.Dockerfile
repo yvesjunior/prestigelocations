@@ -9,8 +9,7 @@ RUN npm ci
 
 COPY src/web ./
 
-# The Lovable vite config targets Cloudflare Workers by default; force the Node server preset.
-ENV NITRO_PRESET=node-server
+# The nitro preset (node-server) is set in vite.config.ts.
 ARG VITE_BASE_URL=
 ENV VITE_BASE_URL=$VITE_BASE_URL
 RUN npm run build
