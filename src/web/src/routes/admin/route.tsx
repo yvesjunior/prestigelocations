@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 import {
   CalendarDays,
+  BarChart3,
   ClipboardList,
   FileText,
   Inbox,
@@ -49,6 +50,7 @@ const NAV: NavItem[] = [
   { to: "/admin/categories", label: "Catégories", icon: Tags },
   { to: "/admin/demandes", label: "Demandes", icon: Inbox },
   { to: "/admin/commandes", label: "Commandes", icon: ClipboardList },
+  { to: "/admin/rapports", label: "Rapports", icon: BarChart3 },
   { to: "/admin/pages", label: "Pages", icon: FileText },
   { to: "/admin/calendrier", label: "Calendrier", icon: CalendarDays, disabled: true },
   { to: "/admin/parametres", label: "Paramètres", icon: Settings },

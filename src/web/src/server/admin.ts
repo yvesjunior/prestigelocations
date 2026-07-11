@@ -77,6 +77,17 @@ export type AdminOrder = {
 
 export type RequestStatus = "nouvelle" | "en_cours" | "traitee" | "sans_suite";
 
+export type ReportPeriod = "30d" | "90d" | "12m" | "all";
+
+export type Report = {
+  period: ReportPeriod;
+  total: number;
+  byStatus: { status: RequestStatus; count: number }[];
+  byEquipment: { label: string; count: number }[];
+  byCategory: { name: string; count: number }[];
+  byMonth: { month: string; count: number }[]; // "AAAA-MM" -> volume
+};
+
 export type AdminRequest = {
   id: number;
   name: string;
@@ -249,6 +260,22 @@ export const validateRequestFn = createServerFn({ method: "POST" })
   .validator(z.object({ id: z.number().int() }))
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> =>
     (await import("./impl/admin")).validateRequest(data.id),
+  );
+
+// ---------------------------------------------------------------- rapports
+
+const reportPeriod = z.object({ period: z.enum(["30d", "90d", "12m", "all"]) });
+
+export const getReportFn = createServerFn({ method: "GET" })
+  .validator(reportPeriod)
+  .handler(async ({ data }): Promise<Report> =>
+    (await import("./impl/admin")).getReport(data.period),
+  );
+
+export const exportRequestsCsvFn = createServerFn({ method: "GET" })
+  .validator(reportPeriod)
+  .handler(async ({ data }): Promise<{ filename: string; csv: string }> =>
+    (await import("./impl/admin")).exportRequestsCsv(data.period),
   );
 
 // ---------------------------------------------------------------- employés

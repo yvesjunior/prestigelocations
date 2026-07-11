@@ -32,6 +32,8 @@ import type {
   CustomerInput,
   EquipmentInput,
   OrderInput,
+  Report,
+  ReportPeriod,
   RequestStatus,
 } from "../admin";
 
@@ -642,6 +644,108 @@ export async function updateContact(data: ContactInfo) {
 export async function getPageContentForAdmin(): Promise<ContentOverrides> {
   await requireUser("accountant");
   return loadPageContent();
+}
+
+// ---------------------------------------------------------------- rapports
+
+const PERIOD_DAYS: Record<Exclude<ReportPeriod, "all">, number> = {
+  "30d": 30,
+  "90d": 90,
+  "12m": 365,
+};
+
+/** Lignes de demandes sur la période, avec la catégorie de l'équipement lié. */
+async function requestsInPeriod(period: ReportPeriod) {
+  const db = getDb();
+  const rows = await db
+    .select({
+      createdAt: reservationRequests.createdAt,
+      name: reservationRequests.name,
+      phone: reservationRequests.phone,
+      equipmentLabel: reservationRequests.equipmentLabel,
+      startDate: reservationRequests.startDate,
+      endDate: reservationRequests.endDate,
+      lang: reservationRequests.lang,
+      status: reservationRequests.status,
+      categoryName: categories.nameFr,
+    })
+    .from(reservationRequests)
+    .leftJoin(equipments, eq(reservationRequests.equipmentId, equipments.id))
+    .leftJoin(categories, eq(equipments.categoryId, categories.id))
+    .where(
+      period === "all"
+        ? undefined
+        : gte(
+            reservationRequests.createdAt,
+            sql`now() - ${`${PERIOD_DAYS[period]} days`}::interval`,
+          ),
+    )
+    .orderBy(desc(reservationRequests.createdAt));
+  return rows;
+}
+
+export async function getReport(period: ReportPeriod): Promise<Report> {
+  await requireUser("accountant");
+  const rows = await requestsInPeriod(period);
+
+  const STATUSES: RequestStatus[] = ["nouvelle", "en_cours", "traitee", "sans_suite"];
+  const byStatus = STATUSES.map((status) => ({
+    status,
+    count: rows.filter((r) => r.status === status).length,
+  }));
+
+  const tally = <T extends string>(items: T[]) => {
+    const map = new Map<T, number>();
+    for (const k of items) map.set(k, (map.get(k) ?? 0) + 1);
+    return [...map.entries()]
+      .map(([key, count]) => ({ key, count }))
+      .sort((a, b) => b.count - a.count);
+  };
+
+  const byEquipment = tally(rows.map((r) => r.equipmentLabel)).map((e) => ({
+    label: e.key,
+    count: e.count,
+  }));
+  // Catégorie : nom de la catégorie de l'équipement, ou « Autre / plusieurs » si sans lien.
+  const byCategory = tally(rows.map((r) => r.categoryName ?? "Autre / plusieurs")).map((c) => ({
+    name: c.key,
+    count: c.count,
+  }));
+  const byMonth = tally(rows.map((r) => r.createdAt.toISOString().slice(0, 7)))
+    .map((m) => ({ month: m.key, count: m.count }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+
+  return { period, total: rows.length, byStatus, byEquipment, byCategory, byMonth };
+}
+
+/** Échappement CSV (guillemets doublés, champ entre guillemets si besoin). */
+function csvCell(value: string): string {
+  return /[",\n;]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+}
+
+export async function exportRequestsCsv(
+  period: ReportPeriod,
+): Promise<{ filename: string; csv: string }> {
+  await requireUser("accountant");
+  const rows = await requestsInPeriod(period);
+  const header = ["Reçue", "Nom", "Téléphone", "Équipement", "Début", "Fin", "Statut", "Langue"];
+  const lines = rows.map((r) =>
+    [
+      r.createdAt.toISOString().slice(0, 10),
+      r.name,
+      r.phone,
+      r.equipmentLabel,
+      r.startDate ?? "",
+      r.endDate ?? "",
+      r.status,
+      r.lang,
+    ]
+      .map((c) => csvCell(String(c)))
+      .join(","),
+  );
+  // BOM UTF-8 (U+FEFF) pour qu'Excel affiche correctement les accents.
+  const csv = "\uFEFF" + [header.join(","), ...lines].join("\r\n");
+  return { filename: `demandes-${period}.csv`, csv };
 }
 
 export async function updatePageContent(data: ContentOverrides) {

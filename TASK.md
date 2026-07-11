@@ -30,12 +30,12 @@
 
 > **Reprendre ici.** Mettre à jour ce bloc à chaque session (2 lignes max).
 
-- **▶ PROCHAINE TÂCHE : 4B.5 — Rapports** (`/admin/rapports`) : volume des demandes par
-  période, répartition par équipement et par catégorie, export CSV ; accessible en lecture
-  au rôle `accountant`. Source = `reservation_requests` (+ `orders` pour les locations
-  confirmées). Puis **4B.4** (vue calendrier admin mensuelle dérivée des `orders` +
-  « bloquer ces dates » depuis une demande) → Phase 4 close. Ce sont les 2 derniers blocs de
-  code pur, sans dépendance 🧍.
+- **▶ PROCHAINE TÂCHE : 4B.4 — Vue calendrier admin** (`/admin/calendrier`, dernier bloc de
+  Phase 4) : vue mensuelle par équipement des périodes réservées (dérivée des `orders`
+  confirmés) + action « bloquer ces dates » depuis une demande (crée une commande). Le
+  composant `ui/calendar` existe déjà ; s'inspirer du calendrier public de `ContactPage`
+  (⚠️ `classNames.root: "relative"` obligatoire). Après 4B.4 → Phase 4 close, passer à la
+  Phase 5 (hébergement, 🧍 domaine + accès serveur).
 - **Session 2026-07-11 commitée sur `develop`** : `4a8f80c` (gros lot : rôles simplifiés,
   CRUD catégories + photos, ImageKit, page maintenance, téléphone 100 % BD,
   `customers`+`orders`, pages publiques de catégories, demandes 4B.3, code équipement ;
@@ -793,7 +793,11 @@ grise immédiatement dans le formulaire public)*
 **4B.5 — Rapports** *(fait quand : compteurs cohérents avec les demandes en BD + CSV
 téléchargeable ; accessible au rôle `accountant`)*
 
-- [ ] `/admin/rapports` : volume par période, répartition équipement/catégorie, export CSV.
+- [x] `/admin/rapports` (2026-07-11) : sélecteur de période (30 j / 90 j / 12 mois / tout),
+      compteurs (total + par statut), répartition **par équipement** et **par catégorie**
+      (+ par mois), export **CSV** (`getReport` / `exportRequestsCsv`, BOM UTF-8 pour Excel).
+      Accessible au rôle `accountant` (lecture). Source `reservation_requests` ;
+      `equipment_label` fige le libellé (code inclus). Vérifié en Docker.
 
 **4B.6 — Apparence (thème)** *(fait quand : changer un curseur ou un préréglage dans
 l'admin change le site public après enregistrement ; « Réinitialiser » revient au thème

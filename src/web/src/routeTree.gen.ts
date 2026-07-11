@@ -27,6 +27,7 @@ import { Route as EnServicesRouteImport } from './routes/en/services'
 import { Route as EnEquipmentRouteImport } from './routes/en/equipment'
 import { Route as EnContactRouteImport } from './routes/en/contact'
 import { Route as EnAboutRouteImport } from './routes/en/about'
+import { Route as AdminRapportsRouteImport } from './routes/admin/rapports'
 import { Route as AdminParametresRouteImport } from './routes/admin/parametres'
 import { Route as AdminPagesRouteImport } from './routes/admin/pages'
 import { Route as AdminMonCompteRouteImport } from './routes/admin/mon-compte'
@@ -131,6 +132,11 @@ const EnAboutRoute = EnAboutRouteImport.update({
   path: '/en/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRapportsRoute = AdminRapportsRouteImport.update({
+  id: '/rapports',
+  path: '/rapports',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminParametresRoute = AdminParametresRouteImport.update({
   id: '/parametres',
   path: '/parametres',
@@ -213,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/admin/mon-compte': typeof AdminMonCompteRoute
   '/admin/pages': typeof AdminPagesRoute
   '/admin/parametres': typeof AdminParametresRoute
+  '/admin/rapports': typeof AdminRapportsRoute
   '/en/about': typeof EnAboutRoute
   '/en/contact': typeof EnContactRoute
   '/en/equipment': typeof EnEquipmentRoute
@@ -245,6 +252,7 @@ export interface FileRoutesByTo {
   '/admin/mon-compte': typeof AdminMonCompteRoute
   '/admin/pages': typeof AdminPagesRoute
   '/admin/parametres': typeof AdminParametresRoute
+  '/admin/rapports': typeof AdminRapportsRoute
   '/en/about': typeof EnAboutRoute
   '/en/contact': typeof EnContactRoute
   '/en/equipment': typeof EnEquipmentRoute
@@ -279,6 +287,7 @@ export interface FileRoutesById {
   '/admin/mon-compte': typeof AdminMonCompteRoute
   '/admin/pages': typeof AdminPagesRoute
   '/admin/parametres': typeof AdminParametresRoute
+  '/admin/rapports': typeof AdminRapportsRoute
   '/en/about': typeof EnAboutRoute
   '/en/contact': typeof EnContactRoute
   '/en/equipment': typeof EnEquipmentRoute
@@ -314,6 +323,7 @@ export interface FileRouteTypes {
     | '/admin/mon-compte'
     | '/admin/pages'
     | '/admin/parametres'
+    | '/admin/rapports'
     | '/en/about'
     | '/en/contact'
     | '/en/equipment'
@@ -346,6 +356,7 @@ export interface FileRouteTypes {
     | '/admin/mon-compte'
     | '/admin/pages'
     | '/admin/parametres'
+    | '/admin/rapports'
     | '/en/about'
     | '/en/contact'
     | '/en/equipment'
@@ -379,6 +390,7 @@ export interface FileRouteTypes {
     | '/admin/mon-compte'
     | '/admin/pages'
     | '/admin/parametres'
+    | '/admin/rapports'
     | '/en/about'
     | '/en/contact'
     | '/en/equipment'
@@ -547,6 +559,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EnAboutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/rapports': {
+      id: '/admin/rapports'
+      path: '/rapports'
+      fullPath: '/admin/rapports'
+      preLoaderRoute: typeof AdminRapportsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/parametres': {
       id: '/admin/parametres'
       path: '/parametres'
@@ -650,6 +669,7 @@ interface AdminRouteRouteChildren {
   AdminMonCompteRoute: typeof AdminMonCompteRoute
   AdminPagesRoute: typeof AdminPagesRoute
   AdminParametresRoute: typeof AdminParametresRoute
+  AdminRapportsRoute: typeof AdminRapportsRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminEquipementsIdRoute: typeof AdminEquipementsIdRoute
   AdminEquipementsNouveauRoute: typeof AdminEquipementsNouveauRoute
@@ -665,6 +685,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminMonCompteRoute: AdminMonCompteRoute,
   AdminPagesRoute: AdminPagesRoute,
   AdminParametresRoute: AdminParametresRoute,
+  AdminRapportsRoute: AdminRapportsRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminEquipementsIdRoute: AdminEquipementsIdRoute,
   AdminEquipementsNouveauRoute: AdminEquipementsNouveauRoute,
