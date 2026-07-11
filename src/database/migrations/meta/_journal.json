@@ -8,6 +8,34 @@
       "when": 1783715068676,
       "tag": "0000_fast_mister_sinister",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783772491145,
+      "tag": "0001_tiny_robin_chapel",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783785133971,
+      "tag": "0002_right_toad",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1783787774548,
+      "tag": "0003_true_mac_gargan",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1783791433613,
+      "tag": "0004_far_sage",
+      "breakpoints": true
     }
   ]
 }

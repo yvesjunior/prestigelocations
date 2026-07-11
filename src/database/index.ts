@@ -8,7 +8,9 @@ export * from "./schema/index.js";
 export type Database = ReturnType<typeof createDb>;
 
 export function createDb(url: string) {
-  const client = postgres(url, { max: 10 });
+  // connect_timeout court : si la BD est injoignable, le site doit basculer en
+  // page de maintenance en quelques secondes, pas après les 30 s par défaut.
+  const client = postgres(url, { max: 10, connect_timeout: 5 });
   return drizzle(client, { schema });
 }
 

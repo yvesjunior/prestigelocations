@@ -1,15 +1,18 @@
 // Server functions du tableau d'administration — wrappers client-safe.
-// Écritures = rôle admin+, comptes employés = superadmin, lectures = accountant+.
+// Écritures et comptes employés = rôle admin, lectures = accountant+.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { ThemeConfig } from "@/lib/theme";
 import { themeConfigSchema } from "@/lib/theme";
+import { contactInfoSchema, type ContactInfo } from "@/lib/contact";
+import { contentOverridesSchema, type ContentOverrides } from "@/lib/content";
 
 // ---------------------------------------------------------------- types
 
 export type AdminEquipment = {
   id: number;
   slug: string;
+  code: string | null;
   categoryId: number;
   categorySlug: string;
   categoryName: string;
@@ -20,6 +23,7 @@ export type AdminEquipment = {
   formLabelFr: string | null;
   formLabelEn: string | null;
   status: "disponible" | "bientot" | "sur_demande";
+  imageKey: string | null;
   featured: boolean;
   published: boolean;
   position: number;
@@ -36,6 +40,7 @@ export type AdminCategory = {
   pageDescriptionEn: string;
   ctaFr: string;
   ctaEn: string;
+  imageKey: string | null;
   position: number;
 };
 
@@ -43,9 +48,49 @@ export type AdminUser = {
   id: number;
   email: string;
   name: string;
-  role: "superadmin" | "admin" | "accountant";
+  role: "admin" | "accountant";
   active: boolean;
   lastLoginAt: string | null;
+};
+
+export type AdminCustomer = {
+  id: number;
+  name: string;
+  phone: string;
+  email: string | null;
+  note: string | null;
+};
+
+export type AdminOrder = {
+  id: number;
+  customerId: number;
+  customerName: string;
+  customerPhone: string;
+  equipmentId: number;
+  equipmentName: string;
+  equipmentCode: string | null;
+  startDate: string;
+  endDate: string;
+  status: "confirmee" | "annulee";
+  note: string | null;
+};
+
+export type RequestStatus = "nouvelle" | "en_cours" | "traitee" | "sans_suite";
+
+export type AdminRequest = {
+  id: number;
+  name: string;
+  phone: string;
+  equipmentId: number | null;
+  equipmentLabel: string;
+  startDate: string | null;
+  endDate: string | null;
+  message: string | null;
+  lang: string;
+  status: RequestStatus;
+  handledByName: string | null;
+  createdAt: string;
+  orderId: number | null;
 };
 
 const equipmentInput = z.object({
@@ -53,6 +98,7 @@ const equipmentInput = z.object({
     .string()
     .min(2)
     .regex(/^[a-z0-9-]+$/, "slug en minuscules, chiffres et tirets"),
+  code: z.string().max(30).nullable(),
   categoryId: z.number().int(),
   nameFr: z.string().min(1),
   nameEn: z.string().min(1),
@@ -61,6 +107,7 @@ const equipmentInput = z.object({
   formLabelFr: z.string().nullable(),
   formLabelEn: z.string().nullable(),
   status: z.enum(["disponible", "bientot", "sur_demande"]),
+  imageKey: z.string().nullable(),
   featured: z.boolean(),
   published: z.boolean(),
   position: z.number().int().min(0),
@@ -76,9 +123,34 @@ const categoryInput = z.object({
   pageDescriptionEn: z.string().min(1),
   ctaFr: z.string().min(1),
   ctaEn: z.string().min(1),
+  imageKey: z.string().nullable(),
   position: z.number().int().min(0),
 });
 export type CategoryInput = z.infer<typeof categoryInput>;
+
+// Création : le slug est généré du nom FR, la position ajoutée en fin de liste,
+// la photo se téléverse ensuite depuis la fiche.
+const categoryCreateInput = categoryInput.omit({ position: true, imageKey: true });
+export type CategoryCreateInput = z.infer<typeof categoryCreateInput>;
+
+const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date au format AAAA-MM-JJ");
+
+const customerInput = z.object({
+  name: z.string().min(1),
+  phone: z.string().min(7),
+  email: z.string().email().nullable(),
+  note: z.string().nullable(),
+});
+export type CustomerInput = z.infer<typeof customerInput>;
+
+const orderInput = z.object({
+  customerId: z.number().int(),
+  equipmentId: z.number().int(),
+  startDate: dateStr,
+  endDate: dateStr,
+  note: z.string().nullable(),
+});
+export type OrderInput = z.infer<typeof orderInput>;
 
 // ---------------------------------------------------------------- équipements
 
@@ -108,6 +180,77 @@ export const updateCategoryFn = createServerFn({ method: "POST" })
   .validator(categoryInput.extend({ id: z.number().int() }))
   .handler(async ({ data }) => (await import("./impl/admin")).updateCategory(data));
 
+export const createCategoryFn = createServerFn({ method: "POST" })
+  .validator(categoryCreateInput)
+  .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> =>
+    (await import("./impl/admin")).createCategory(data),
+  );
+
+export const deleteCategoryFn = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.number().int() }))
+  .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> =>
+    (await import("./impl/admin")).deleteCategory(data.id),
+  );
+
+// ---------------------------------------------------------------- clients & commandes
+
+export const listCustomersFn = createServerFn({ method: "GET" }).handler(
+  async (): Promise<AdminCustomer[]> => (await import("./impl/admin")).listCustomers(),
+);
+
+export const createCustomerFn = createServerFn({ method: "POST" })
+  .validator(customerInput)
+  .handler(async ({ data }): Promise<{ ok: boolean; id?: number; error?: string }> =>
+    (await import("./impl/admin")).createCustomer(data),
+  );
+
+export const listOrdersFn = createServerFn({ method: "GET" }).handler(
+  async (): Promise<AdminOrder[]> => (await import("./impl/admin")).listOrders(),
+);
+
+export const createOrderFn = createServerFn({ method: "POST" })
+  .validator(orderInput)
+  .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> =>
+    (await import("./impl/admin")).createOrder(data),
+  );
+
+export const updateOrderFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      id: z.number().int(),
+      startDate: dateStr.optional(),
+      endDate: dateStr.optional(),
+      note: z.string().nullable().optional(),
+      status: z.enum(["confirmee", "annulee"]).optional(),
+    }),
+  )
+  .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> =>
+    (await import("./impl/admin")).updateOrder(data),
+  );
+
+// ---------------------------------------------------------------- demandes
+
+export const listRequestsFn = createServerFn({ method: "GET" }).handler(
+  async (): Promise<AdminRequest[]> => (await import("./impl/admin")).listRequests(),
+);
+
+export const updateRequestStatusFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      id: z.number().int(),
+      status: z.enum(["nouvelle", "en_cours", "traitee", "sans_suite"]),
+    }),
+  )
+  .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> =>
+    (await import("./impl/admin")).updateRequestStatus(data),
+  );
+
+export const validateRequestFn = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.number().int() }))
+  .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> =>
+    (await import("./impl/admin")).validateRequest(data.id),
+  );
+
 // ---------------------------------------------------------------- employés
 
 export const listUsersFn = createServerFn({ method: "GET" }).handler(
@@ -119,22 +262,26 @@ export const createUserFn = createServerFn({ method: "POST" })
     z.object({
       email: z.string().email(),
       name: z.string().min(1),
-      role: z.enum(["superadmin", "admin", "accountant"]),
+      role: z.enum(["admin", "accountant"]),
       password: z.string().min(10),
     }),
   )
-  .handler(async ({ data }) => (await import("./impl/admin")).createUser(data));
+  .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> =>
+    (await import("./impl/admin")).createUser(data),
+  );
 
 export const updateUserFn = createServerFn({ method: "POST" })
   .validator(
     z.object({
       id: z.number().int(),
-      role: z.enum(["superadmin", "admin", "accountant"]).optional(),
+      role: z.enum(["admin", "accountant"]).optional(),
       active: z.boolean().optional(),
       password: z.string().min(10).optional(),
     }),
   )
-  .handler(async ({ data }) => (await import("./impl/admin")).updateUser(data));
+  .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> =>
+    (await import("./impl/admin")).updateUser(data),
+  );
 
 // ---------------------------------------------------------------- thème
 
@@ -155,3 +302,23 @@ export const resetThemeFn = createServerFn({ method: "POST" }).handler(async () 
 export const getAdminStatsFn = createServerFn({ method: "GET" }).handler(async () =>
   (await import("./impl/admin")).getAdminStats(),
 );
+
+// ---------------------------------------------------------------- coordonnées
+
+export const getContactForAdminFn = createServerFn({ method: "GET" }).handler(
+  async (): Promise<ContactInfo> => (await import("./impl/admin")).getContactForAdmin(),
+);
+
+export const updateContactFn = createServerFn({ method: "POST" })
+  .validator(contactInfoSchema)
+  .handler(async ({ data }) => (await import("./impl/admin")).updateContact(data));
+
+// ---------------------------------------------------------------- pages
+
+export const getPageContentForAdminFn = createServerFn({ method: "GET" }).handler(
+  async (): Promise<ContentOverrides> => (await import("./impl/admin")).getPageContentForAdmin(),
+);
+
+export const updatePageContentFn = createServerFn({ method: "POST" })
+  .validator(contentOverridesSchema)
+  .handler(async ({ data }) => (await import("./impl/admin")).updatePageContent(data));

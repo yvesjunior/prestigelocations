@@ -1,7 +1,8 @@
 import { Tractor, Truck, Wrench, type LucideIcon } from "lucide-react";
 import { CategoryCard } from "./CategoryCard";
 import { SectionTitle } from "@/components/site/SectionTitle";
-import { statusSuffix } from "@/lib/catalog";
+import { statusSuffix, withCode } from "@/lib/catalog";
+import { BLANK_IMAGE, imageUrl } from "@/lib/images";
 import { useCatalog } from "@/lib/useCatalog";
 import { useLang, useT } from "@/lib/i18n";
 import catMachinerie from "@/assets/cat-machinerie.jpg";
@@ -14,7 +15,8 @@ const visualsBySlug: Record<string, { image: string; icon: LucideIcon }> = {
   "petits-equipements": { image: catPetits, icon: Wrench },
 };
 
-const fallbackVisual = { image: catMachinerie, icon: Tractor };
+// Catégorie inconnue sans photo : image neutre, jamais celle d'une autre catégorie.
+const fallbackVisual = { image: BLANK_IMAGE, icon: Tractor };
 
 export function CategoriesSection() {
   const lang = useLang();
@@ -34,7 +36,7 @@ export function CategoriesSection() {
           const items = equipments
             .filter((e) => e.category === c.slug && e.featured)
             .map((e) => ({
-              label: e.name[lang],
+              label: withCode(e.name[lang], e.code),
               note: statusSuffix(e.status)?.[lang],
             }));
           items.push({ label: t.categoriesSection.andMore, note: undefined });
@@ -42,9 +44,11 @@ export function CategoriesSection() {
             <CategoryCard
               key={c.slug}
               category={{
+                slug: c.slug,
                 title: c.name[lang],
                 description: c.cardDescription[lang],
-                image: visual.image,
+                // Photo téléversée dans l'admin (ImageKit), sinon asset bundlé du slug.
+                image: imageUrl(c.imageKey, { w: 800 }) ?? visual.image,
                 icon: visual.icon,
                 cta: c.cta[lang],
                 items,

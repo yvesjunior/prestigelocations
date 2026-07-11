@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Check, type LucideIcon } from "lucide-react";
-import { pagePaths, useLang } from "@/lib/i18n";
+import { categoryPagePath, useLang } from "@/lib/i18n";
 
 export interface Category {
+  slug: string;
   title: string;
   description: string;
   image: string;
@@ -38,7 +39,7 @@ export function CategoryCard({ category }: { category: Category }) {
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{category.description}</p>
 
         <div className="mt-5">
-          <Link to={pagePaths.equipment[lang]} className="btn-gold-outline">
+          <Link to={categoryPagePath(category.slug, lang)} className="btn-gold-outline">
             {category.cta}
             <ArrowRight className="h-4 w-4" />
           </Link>

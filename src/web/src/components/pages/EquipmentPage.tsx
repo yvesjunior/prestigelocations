@@ -2,8 +2,10 @@ import { Link } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import { SectionTitle } from "@/components/site/SectionTitle";
 import { CtaSection } from "@/components/site/CtaSection";
-import { pagePaths, useLang, useT } from "@/lib/i18n";
-import { statusSuffix } from "@/lib/catalog";
+import { categoryPagePath, useLang, useT } from "@/lib/i18n";
+import { statusSuffix, withCode } from "@/lib/catalog";
+import { CdnImage } from "@/components/site/CdnImage";
+import { BLANK_IMAGE } from "@/lib/images";
 import { useCatalog } from "@/lib/useCatalog";
 import catMachinerie from "@/assets/cat-machinerie.jpg";
 import catRemorques from "@/assets/cat-remorques.jpg";
@@ -35,18 +37,18 @@ export function EquipmentPage() {
           const items = equipments
             .filter((e) => e.category === category.slug)
             .map((e) => {
-              const base = e.detail?.[lang] ?? e.name[lang];
+              const base = withCode(e.detail?.[lang] ?? e.name[lang], e.code);
               const suffix = statusSuffix(e.status)?.[lang];
               return suffix ? `${base} ${suffix}` : base;
             });
           return (
             <section key={category.slug} className="grid items-center gap-10 md:grid-cols-2">
-              <img
-                src={imagesBySlug[category.slug] ?? catMachinerie}
+              <CdnImage
+                imageKey={category.imageKey}
+                fallbackSrc={imagesBySlug[category.slug] ?? BLANK_IMAGE}
                 alt={category.alt[lang]}
                 width={1024}
                 height={768}
-                loading="lazy"
                 className={`aspect-[4/3] w-full rounded-xl border border-border/60 object-cover ${
                   i % 2 === 1 ? "md:order-2" : ""
                 }`}
@@ -68,8 +70,10 @@ export function EquipmentPage() {
                   ))}
                 </ul>
                 <div className="mt-7">
-                  <Link to={pagePaths.contact[lang]} className="btn-gold-outline">
-                    {t.equipmentPage.checkAvailability}
+                  {/* Vers la page dédiée de la catégorie (le bouton « Vérifier la
+                      disponibilité » vit là-bas, sur chaque équipement). */}
+                  <Link to={categoryPagePath(category.slug, lang)} className="btn-gold-outline">
+                    {category.cta[lang]}
                   </Link>
                 </div>
               </div>

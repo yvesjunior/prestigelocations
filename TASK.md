@@ -12,6 +12,11 @@
   `npm run dev` à la racine (proxy vers `src/web`, port 8080).
 - **Qualité** : avant de terminer une tâche → `npx tsc --noEmit` et `npx eslint` sur les
   fichiers touchés (le dépôt a du bruit CRLF pré-existant : ne corriger que ses fichiers).
+- **Toujours finir par un build Docker** : le serveur de dev ne prouve pas l'image de prod
+  (build args `VITE_*`, `NODE_ENV=production`, sortie nitro). Après chaque changement :
+  `docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.dev.yml
+  up -d --build web`, puis vérifier conteneur `healthy` + `curl localhost:3000/fr` + la
+  fonctionnalité modifiée. (Le conteneur ne hot-reload pas ; migrations/seed à la main.)
 - **Git** : jamais de réécriture d'historique poussé (pas de force-push/rebase de commits
   publiés). Commits au format Conventional Commits, sans mention d'IA. Ne commiter que sur
   demande explicite. (La connexion Lovable a été retirée — tout se gère ici.)
@@ -25,17 +30,60 @@
 
 > **Reprendre ici.** Mettre à jour ce bloc à chaque session (2 lignes max).
 
-- **En cours** : Phase 4 — il reste 4B.3 (demandes), 4B.4 (calendrier), 4B.5 (rapports) ;
-  l'upload photo attend 🧍 le compte ImageKit (Phase 3).
-- **Fait le 2026-07-10** : Phase 2 (catalogue), 4A (BD seedée, site public sourcé BD),
-  4B.1 (auth employés), 4B.2 (CRUD équipements/catégories sans photos), 4B.6 (apparence).
+- **Travail de la session 2026-07-11 commité** : `4a8f80c` sur `develop` (rôles simplifiés,
+  CRUD catégories + photos, ImageKit, page maintenance, téléphone 100 % BD,
+  `customers`+`orders`, pages publiques de catégories, demandes 4B.3 + calendrier public +
+  courriel, code équipement ; migrations `0001`→`0004`). **⚠️ Pas encore poussé** — le push
+  attend 🧍 les droits GitHub pour `yvesbat` (invitation collaborateur sur
+  `Axelle03/Projet-Prestige_Locations` ou bascule de compte). `image.png` (maquette) laissé
+  non suivi. **Après un checkout neuf : `npm run db:setup`** (migrations + seed pas encore
+  automatisés au boot du conteneur — dette Phase 5).
+- **En cours** : Phase 4 — il reste **4B.4** (vue calendrier admin mensuelle, dérivée des
+  commandes) et **4B.5** (rapports + export CSV). 4B.1/4B.2/4B.3/4B.6 faits.
+- **🧍 En attente client** : compte SMTP (courriels de demandes), domaine (Phase 5),
+  validation contenu/photos réelles (Phase 6).
 
 ## État actuel
 
 - Site vitrine bilingue FR/EN fonctionnel en développement (TanStack Start / React 19, SSR,
   Tailwind 4) : 5 pages × 2 langues, sélecteur de langue, redirections 301, meta/OG traduits,
   sitemap XML. Textes centralisés dans `src/web/src/lib/i18n.ts` (dictionnaires fr/en typés).
-- Réservation : formulaire → courriel au gérant (`mailto:`), pas d'envoi serveur (4B.3 à faire).
+- **Aucune donnée métier statique affichée (Phase 2 close, 2026-07-11)** : catégories,
+  équipements et options du formulaire viennent de la BD (loaders → `getCatalogFn`, cache
+  60 s invalidé à chaque écriture admin — vérifié : renommer une catégorie dans l'admin
+  change l'accueil et la page Équipements immédiatement). `i18n.ts` ne garde que les
+  libellés d'interface (les blocs `categories`/`sections`/`equipmentOptions` morts ont été
+  supprimés, 691 → 522 lignes). ⚠️ Changement de texte : le titre de l'accueil
+  « Trois catégories » → « **Nos catégories** » / « Our categories » (l'ancien supposait un
+  nombre fixe) — surchargeable dans Pages. `catalog.ts` ne sert **que de seed**.
+- **Page de maintenance si BD indisponible (2026-07-11, demande client interne)** : plus
+  aucun repli statique — si la BD est injoignable, les server functions publiques jettent
+  `SERVICE_UNAVAILABLE`, le site affiche une page de maintenance bilingue (bouton
+  « Réessayer » = rechargement complet) et `src/server.ts` requalifie la réponse SSR en
+  **503 + `Retry-After: 30`** (correct pour les moteurs de recherche). `connect_timeout: 5`
+  sur le client postgres pour basculer vite. L'absence de la *ligne* `theme` en BD reste un
+  cas normal (thème par défaut) — seule la connexion en échec déclenche la maintenance.
+  Vérifié en Docker : 200 → arrêt db → 503/maintenance FR+EN en ~20 ms → redémarrage db →
+  200 ; « Réessayer » recharge le site complet.
+- **Téléphone 100 % BD (2026-07-11)** : plus aucun numéro en dur dans `i18n.ts` ni
+  `site.ts` (constantes `PHONE_DISPLAY`/`PHONE_HREF`/`EMAIL` supprimées). Les meta
+  descriptions utilisent un gabarit `{phone}` résolu par `pageHead(key, lang, phone)` ;
+  les 4 routes concernées (accueil + contact, FR/EN) chargent `contact` dans leur loader
+  (⚠️ les `matches` du contexte `head` n'exposent PAS `loaderData` dans cette version de
+  TanStack Router — seul le `loaderData` de la route elle-même est disponible). Le message
+  de confirmation du formulaire interpole aussi `{phone}`. Unique occurrence en dur
+  restante : `DEFAULT_CONTACT` (`lib/contact.ts`) = valeur initiale tant que la ligne
+  `settings.contact` n'existe pas. Vérifié en Docker : changer le téléphone dans l'admin
+  change les meta des 4 pages.
+- **Demandes de réservation (4B.3 fait, 2026-07-11)** : le formulaire public enregistre en
+  BD (`reservation_requests`) avec calendrier de disponibilité (journées des commandes
+  confirmées grisées), honeypot, rate limit et revalidation serveur ; **courriel de
+  notification à l'administrateur** (nodemailer, `SMTP_*` en env, best-effort — non
+  configuré = log seulement). Dans l'admin : page **Demandes** (statuts, trace) et
+  « Valider → commande » (client trouvé/créé par téléphone, commande liée
+  `orders.request_id`, demande `traitee`) → la disponibilité publique s'ajuste aussitôt.
+  Vérifié en Docker bout en bout (soumission → validation → journée grisée au public ;
+  rate limit au 6ᵉ envoi ; conflit refusé).
 - Dépôt restructuré : app web dans `src/web/`, dossiers `infra/` et `scripts/` créés,
   scripts npm proxy à la racine (`npm run dev|build|lint`).
 - **Docker opérationnel (Phase 1 faite)** : `infra/docker/web.Dockerfile` (multi-étapes,
@@ -47,11 +95,70 @@
 - **BD opérationnelle (4A)** : monorepo npm workspaces, paquet `@prestige/database`
   (Drizzle, migrations dans `src/database/migrations/`, `seed.ts` idempotent), service `db`
   dans compose, `npm run db:setup` (migrate + seed). Le site public lit la BD via server
-  functions (cache 60 s) avec **repli sur `catalog.ts`** si BD indisponible.
-- **Admin `/admin` en ligne (4B.1, 4B.2, 4B.6)** : auth sessions/rôles conforme à la spec
-  (login, logout, mon-compte, employés superadmin), CRUD équipements (statut, featured,
-  publié, ordre — photos en attente d'ImageKit), édition catégories, page Apparence
-  (curseurs + préréglages Or/Vert/Rouge/Bleu + reset) publiée en SSR sur le site.
+  functions (cache 60 s) ; BD injoignable → **page de maintenance 503** (aucun repli statique).
+- **Admin `/admin` complet pour le contenu (4B.1, 4B.2, 4B.6 faits)** — navigation :
+  Tableau de bord · Équipements (CRUD, statut, featured, publié, ordre, photo) ·
+  Catégories (création, renommage FR/EN, ordre, suppression si vide, photo —
+  **toutes** les catégories de la BD s'affichent sur le site, même vides : la BD est la
+  source de vérité, décision 2026-07-11) · **Pages**
+  (textes FR/EN de chaque page éditables par
+  surcharges — clé `page_content` de `settings`, liste blanche de chemins dans
+  `lib/content.ts`, fusion dans `useT()`, « Texte d'origine » par champ ; l'onglet Contact
+  porte aussi les **coordonnées de l'entreprise** — téléphone/courriel en BD, servis partout
+  via le loader racine + `useContact()`, composant `admin/ContactSettings`) · Calendrier
+  (désactivé, 4B.4) · **Paramètres** (onglet Apparence : curseurs + préréglages
+  Or/Vert/Rouge/Bleu + reset, publié en SSR) · **Employés & rôles** (rôle `admin` :
+  matrice des rôles, comptes, activation, reset mot de passe) · Mon compte.
+  Auth conforme à la spec (sessions hachées, rôles, anti-brute-force).
+- **Rôles simplifiés (2026-07-11)** : `superadmin` fusionné dans `admin` (migration
+  `0001` — enum `user_role` = `admin` | `accountant`). `admin` = plein accès, y compris
+  les comptes employés ; `accountant` = lecture seule (rapports, 4B.5).
+- **Pages publiques de catégories (2026-07-11)** : routes dynamiques
+  `/fr/equipements/$slug` et `/en/equipment/$slug` (`components/pages/CategoryPage`,
+  slug partagé entre les langues, 404 si inconnu). La page liste les **équipements de la
+  catégorie** en cartes (photo de l'équipement, sinon photo de la catégorie, sinon image
+  neutre ; nom, détail, statut) avec le bouton « **Vérifier la disponibilité** » (→ contact)
+  **sur chaque équipement**. Les boutons de la page Équipements et des cartes de l'accueil
+  mènent maintenant à ces pages (libellé = `cta` de la catégorie, éditable dans l'admin).
+  Sélecteur de langue mappé slug→slug ; hreflang ; catégories ajoutées au sitemap
+  dynamiquement (BD, repli silencieux si indisponible).
+- **Commandes & clients (2026-07-11, migration `0002`)** : tables `customers` (sans
+  connexion — activable plus tard) et `orders` ; page `/admin/commandes` (création avec
+  client inline ou existant, aide « Déjà réservé : … », modification des dates, annulation/
+  réactivation — pas de suppression) ; garde serveur anti-chevauchement entre commandes
+  confirmées d'un même équipement (testée en Docker : création, conflit refusé, extension,
+  annulation → dates libérées → re-réservation OK, réactivation en conflit refusée).
+  La disponibilité d'un équipement = absence de commande confirmée sur la période.
+  Compteur « Locations en cours » sur le tableau de bord. Voir le schéma détaillé
+  (« customers et orders — avancés depuis la Phase 8 »).
+- **Accueil : diaporama** — 3 photos (`hero-slide-2/3/4.webp`, fondus alpha incrustés +
+  désaturation -20 %), rotation auto 10 s (setTimeout ré-armé par diapo), fondu 2 s, points
+  de navigation. `hero-excavator.jpg` supprimé ; la page À propos utilise
+  `hero-excavator3.jpg`. Le panneau de réglage du thème sur le site public n'apparaît que si
+  `VITE_THEME_TWEAKER=1` (tests) — sinon le thème ne se gère que dans l'admin.
+- Loader racine = `{ theme, contact, content }` (3 lectures BD en cache 60 s ; échec BD →
+  page de maintenance).
+- **ImageKit opérationnel (Phase 3 faite, 2026-07-11)** : compte `kiwanoinc`, dossier racine
+  `prestigelocations/` (sous-dossiers `categories/` et `equipements/`). Upload depuis
+  l'admin (fiche catégorie et fiche équipement) : signature serveur HMAC (10 min, sans SDK
+  — `server/impl/imagekit.ts`), envoi direct navigateur → CDN, `image_key` (filePath) en BD
+  à l'enregistrement ; remplacement/retrait/suppression → l'ancien fichier est purgé du
+  compte (best-effort, **non bloquant avec réessais à 0/5/20 s** : l'index de recherche
+  ImageKit accuse quelques secondes de retard sur les uploads — découvert en testant
+  l'image Docker, invisible en dev). Affichage : `lib/images.ts` (`imageUrl` + `tr:w,f-auto,q-auto`) et
+  `<CdnImage>` (srcset 1x/2x) avec **repli sur les assets bundlés** si pas de clé ou pas
+  d'endpoint. Le `.env` racine est lu par `vite.config.ts` (`envDir` + hydratation
+  `process.env` en dev). **Les 3 photos de catégories sont hébergées sur ImageKit**
+  (noms stables `categories/cat-<slug>.jpg`, référencées dans `catalog.ts` → un seed
+  neuf les retrouve ; le seed ne touche jamais `image_key` des lignes existantes) et
+  gérables depuis la fiche catégorie de l'admin ; les assets bundlés restent en repli. Photos d'équipements : stockées et affichées dans l'admin ; le
+  site public n'affiche pour l'instant que les photos de **catégories** (pas de page détail
+  équipement). Vérifié bout en bout (upload réel → SSR CDN → retrait → fichier purgé).
+- Un seul compte employé existe (dev : admin@prestige.local / prestige-dev, admin).
+  Gestion des employés **complète (4B.1 fait)** : garde « dernier admin actif »
+  côté serveur, pas d'auto-désactivation, message clair sur courriel en double, colonne
+  « Dernière connexion », erreurs serveur affichées dans l'UI (vérifié en navigateur le
+  2026-07-11).
 - ⚠️ Piège à connaître : les fichiers `src/web/src/server/*.ts` sont des wrappers
   client-safe — **tout code serveur (BD, cookies) doit passer par un import dynamique dans
   le handler** (voir `src/server/impl/*`), sinon la protection d'imports casse le client.
@@ -86,15 +193,14 @@ Projet-Prestige_Locations/
 ## Ordre d'exécution
 
 ```
-Phase 2 (Catalogue)┐
-Phase 3 (ImageKit)─┴─> Phase 4 (BD + Admin) ──> Phase 5 (Hébergement) ──> Phase 6 (Démo)
-                                                                              │
-                                                       Phase 7 (Production) <─┘
-                                                       Phase 8 (Partenariat, continu)
+Phase 4 (BD + Admin) ──> Phase 5 (Hébergement) ──> Phase 6 (Démo)
+                                                       │
+                                Phase 7 (Production) <─┘
+                                Phase 8 (Partenariat, continu)
 ```
 
-*(Phase 1 — Docker : terminée.)* Les phases 2 et 3 sont **indépendantes entre elles**
-(parallélisables). La 4 dépend des deux. Les suivantes sont séquentielles.
+*(Phases 1 — Docker, 2 — Catalogue et 3 — ImageKit : terminées.)* Les suivantes sont
+séquentielles.
 
 ## Environnements et configuration (.env)
 
@@ -136,11 +242,12 @@ docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compo
 | Variable | Type | Consommée par | Dev | Prod | Phase |
 |---|---|---|---|---|---|
 | `VITE_BASE_URL` | build arg (public) | `site.ts` (hreflang, sitemap) | `""` (fallback) | `https://<domaine>` | 1 |
-| `VITE_IMAGEKIT_URL_ENDPOINT` | build arg (public) | `images.ts` (URLs CDN) | vide → assets locaux | URL du compte | 3 |
-| `IMAGEKIT_PUBLIC_KEY` / `IMAGEKIT_PRIVATE_KEY` | runtime (secret) | signature d'upload | mêmes clés (dossier `dev/` recommandé) | clés du compte | 4 |
+| `VITE_THEME_TWEAKER` | build arg (public) | panneau de réglage du thème sur le site (tests) | vide (masqué) ; `1` pour tester | vide | 4 |
+| `VITE_IMAGEKIT_URL_ENDPOINT` | build arg (public) | `images.ts` (URLs CDN) | URL du compte (vide → assets locaux) | URL du compte | 3 ✔ |
+| `IMAGEKIT_PUBLIC_KEY` / `IMAGEKIT_PRIVATE_KEY` / `IMAGEKIT_FOLDER` | runtime (secret) | signature d'upload, suppression de fichiers | clés du compte, dossier `prestigelocations` | mêmes valeurs | 3 ✔ |
 | `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | runtime (secret) | service `db` | valeurs simples | mot de passe fort généré | 4 |
 | `DATABASE_URL` | runtime (secret) | `web` (Drizzle) et `npm run dev` | `postgres://…@localhost:5432/…` | `postgres://…@db:5432/…` | 4 |
-| `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` | runtime (secret) | `seed.ts` (superadmin) | compte de test | vraies valeurs du gérant | 4 |
+| `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` | runtime (secret) | `seed.ts` (admin initial) | compte de test | vraies valeurs du gérant | 4 |
 | `DOMAIN` | runtime (public) | Caddy | inutilisé | domaine final | 5 |
 
 > Nuance `DATABASE_URL` : hôte `localhost` quand l'app tourne hors conteneur
@@ -175,15 +282,14 @@ réservation confirmée en ligne — elle se conclut par téléphone/courriel av
 
 | Acteur | Compte | Accès |
 |---|---|---|
-| **Client** (`customers`) | **Aucun pour l'instant** — pas de connexion client | Site public uniquement ; demande de réservation via le formulaire de contact. La table `customers` n'arrive qu'avec la réservation en ligne (Phase 8) |
-| **Employé** (`users`) | Oui — rôles `superadmin`, `admin`, `accountant` | Tableau d'administration `/admin` (Phase 4) |
+| **Client** (`customers`) | **Table en place (2026-07-11), sans connexion** — fiches créées par les employés pour compléter une commande ; aucune colonne d'auth (une migration ajoutera `password_hash`/`active` si l'option connexion s'active un jour) | Site public uniquement ; demande de réservation via le formulaire de contact |
+| **Employé** (`users`) | Oui — rôles `admin`, `accountant` (`superadmin` fusionné dans `admin` le 2026-07-11) | Tableau d'administration `/admin` (Phase 4) |
 
 Permissions des employés au lancement :
 
 | Rôle | Catalogue (CRUD + photos) | Demandes de réservation | Comptes employés | Vocation future |
 |---|---|---|---|---|
-| `superadmin` | ✓ | ✓ (traiter, statuer) | ✓ (création, rôle, désactivation) | Tout |
-| `admin` | ✓ | ✓ (traiter, statuer) | — | Réservations confirmées (Phase 8) |
+| `admin` | ✓ | ✓ (traiter, statuer) | ✓ (création, rôle, désactivation) | Tout ; réservations confirmées (Phase 8) |
 | `accountant` | lecture seule | lecture + **rapports** | — | Finances (Phase 8) |
 
 ### Demandes de réservation
@@ -207,7 +313,17 @@ sélectionné. Règles :
 - Le calendrier suppose **une unité par équipement** (réalité actuelle du parc) ; si un
   équipement existe en plusieurs exemplaires un jour, on ajoutera une quantité en Phase 8.
 
-### Catégories (3)
+### Catégories (3 au lancement — extensibles via l'admin)
+
+Le nombre de catégories n'est pas fixe : l'admin permet d'en créer (slug généré du nom FR,
+position en fin de liste) et d'en supprimer (seulement si vides d'équipements — FK
+`on delete restrict`). **Toutes les catégories de la BD s'affichent sur le site public**,
+y compris sans équipement publié (décision 2026-07-11 — la BD est la source de vérité ;
+l'ancien filtre « catégorie vide masquée » a été retiré). La photo d'une catégorie se
+téléverse depuis sa fiche dans l'admin (ImageKit) ; sans photo téléversée, une catégorie
+affiche une **image neutre** (`BLANK_IMAGE`, SVG sombre inline dans `lib/images.ts`) —
+jamais la photo d'une autre catégorie (2026-07-11). Les assets bundlés `cat-*.jpg` ne
+servent plus que de repli aux 3 slugs d'origine.
 
 | Slug | FR | EN |
 |---|---|---|
@@ -217,24 +333,27 @@ sélectionné. Règles :
 
 ### Équipements (catalogue actuel)
 
-| Slug | Catégorie | FR / EN | Statut |
-|---|---|---|---|
-| `mini-pelle` | machinerie | Mini-pelle (excavatrice compacte) / Mini excavator | disponible |
-| `tracteur-compact` | machinerie | Tracteur compact avec accessoires / Compact tractor | disponible |
-| `plateforme-elevatrice` | machinerie | Plateforme élévatrice / Aerial lift | **bientôt** |
-| `godets-accessoires` | machinerie | Godets et accessoires variés / Buckets & attachments | disponible |
-| `trailer-dompeur` | remorques | Trailer dompeur / Dump trailer | disponible |
-| `trailer-ferme` | remorques | Trailer fermé / Enclosed trailer | disponible |
-| `trailer-plateforme` | remorques | Trailer plateforme / Flatbed trailer | disponible |
-| `attaches-remorquage` | remorques | Attaches et accessoires / Hitches & accessories | disponible |
-| `compacteur` | petits-equipements | Compacteur à plaque vibrante / Plate compactor | disponible |
-| `scie-a-beton` | petits-equipements | Scie à béton / Concrete saw | disponible |
-| `marteau-piqueur` | petits-equipements | Marteau-piqueur / Jackhammer | disponible |
-| `outillage-specialise` | petits-equipements | Outillage spécialisé sur demande / Specialized tools | sur demande |
+| Slug | Code | Catégorie | FR / EN | Statut |
+|---|---|---|---|---|
+| `mini-pelle` | MP-01 | machinerie | Mini-pelle (excavatrice compacte) / Mini excavator | disponible |
+| `tracteur-compact` | TC-01 | machinerie | Tracteur compact avec accessoires / Compact tractor | disponible |
+| `plateforme-elevatrice` | PE-01 | machinerie | Plateforme élévatrice / Aerial lift | **bientôt** |
+| `godets-accessoires` | GA-01 | machinerie | Godets et accessoires variés / Buckets & attachments | disponible |
+| `trailer-dompeur` | TD-01 | remorques | Trailer dompeur / Dump trailer | disponible |
+| `trailer-ferme` | TF-01 | remorques | Trailer fermé / Enclosed trailer | disponible |
+| `trailer-plateforme` | TP-01 | remorques | Trailer plateforme / Flatbed trailer | disponible |
+| `attaches-remorquage` | AR-01 | remorques | Attaches et accessoires / Hitches & accessories | disponible |
+| `compacteur` | CP-01 | petits-equipements | Compacteur à plaque vibrante / Plate compactor | disponible |
+| `scie-a-beton` | SB-01 | petits-equipements | Scie à béton / Concrete saw | disponible |
+| `marteau-piqueur` | MA-01 | petits-equipements | Marteau-piqueur / Jackhammer | disponible |
+| `outillage-specialise` | OS-01 | petits-equipements | Outillage spécialisé sur demande / Specialized tools | sur demande |
 
 ### Attributs d'un équipement (modèle cible)
 
-`slug` (id stable), `category`, `name` {fr, en}, `description` {fr, en},
+`slug` (id stable), `code` (optionnel, unique — ex. « MP-01 », distingue deux unités du
+même nom, affiché entre parenthèses partout où le nom apparaît : admin, commandes,
+formulaire de contact, pages publiques ; migration `0004`, 2026-07-11), `category`,
+`name` {fr, en}, `description` {fr, en},
 `status` (`disponible` | `bientot` | `sur-demande`), `image` (clé ImageKit),
 `featured` (mis en avant sur l'accueil). Plus tard (réservation sur plateforme) :
 `tarifs` {jour, semaine, mois}, `quantite`, `disponibilites`.
@@ -258,11 +377,11 @@ confirmer avec le client si des prix seront affichés un jour.
 | `home/CategoriesSection` | Grille des 3 catégories | i18n → **catalogue** |
 | `home/CategoryCard` | Carte d'une catégorie | props → **catalogue** |
 | `pages/HomePage…ContactPage` | Corps des 5 pages (partagés FR/EN) | i18n → **catalogue** |
-| `<CdnImage>` *(à créer, Phase 3)* | Image ImageKit avec transformations | catalogue |
+| `<CdnImage>` ✔ | Image ImageKit (srcset 1x/2x) avec repli sur asset bundlé | catalogue |
 | `admin/LoginPage` *(à créer, Phase 4)* | Connexion des employés | BD (users) |
 | `admin/EquipmentList` *(à créer, Phase 4)* | Liste + statuts des équipements | BD |
 | `admin/EquipmentForm` *(à créer, Phase 4)* | Ajout/édition (FR+EN, statut, photo) | BD + ImageKit |
-| `admin/UserList` / `UserForm` *(à créer, Phase 4)* | Comptes employés (superadmin) | BD (users) |
+| `admin/UserList` / `UserForm` *(à créer, Phase 4)* | Comptes employés (admin) | BD (users) |
 | `admin/RequestList` *(à créer, Phase 4)* | Demandes de réservation (filtres, statuts) | BD (reservation_requests) |
 | `admin/AvailabilityCalendar` *(à créer, Phase 4)* | Indisponibilités par équipement | BD (equipment_unavailabilities) |
 | `AvailabilityPicker` *(à créer, Phase 4)* | Choix de dates du formulaire public (jours grisés) | BD via `getUnavailableDates` |
@@ -273,109 +392,13 @@ confirmer avec le client si des prix seront affichés un jour.
 
 ---
 
-## Phase 2 — Catalogue d'équipements (modèle de données)
-
-**Objectif** : une **source de vérité unique** pour catégories/équipements (voir « Domaine
-métier »), au lieu de listes dupliquées dans les dictionnaires i18n. Deviendra le seed de la
-BD en Phase 4.
-
-**Dépendances** : aucune. Parallélisable avec les phases 1 et 3.
-**Estimation** : 0,5–1 jour.
-
-**Fichiers** : créer `src/web/src/lib/catalog.ts` ; modifier
-`src/web/src/components/home/CategoriesSection.tsx`, `CategoryCard.tsx`,
-`src/web/src/components/pages/EquipmentPage.tsx`, `ContactPage.tsx`,
-`src/web/src/lib/i18n.ts` (retrait des données métier).
-
-### Choix
-
-| Choix | Décision | Justification |
-|---|---|---|
-| Emplacement | `src/web/src/lib/catalog.ts` | Consommé uniquement par le web pour l'instant ; migrera en donnée de seed |
-| Forme | Objets TS typés `Category[]` + `EquipmentItem[]` avec champs bilingues `{fr, en}` | Aligné sur le futur schéma BD ; pas de dépendance |
-| Frontière i18n / catalogue | i18n garde les libellés d'interface (titres de sections, CTA, formulaire) ; le catalogue porte les **données métier** (noms, descriptions, statuts des équipements) | Une seule chose à modifier quand le catalogue change |
-| Descriptions de la page Équipements | Restent par **catégorie** dans le catalogue (`Category.description {fr,en}`), les items de liste deviennent des équipements + `note` optionnelle | C'est la structure actuelle de la page ; pas de refonte visuelle |
-
-### Démarche
-
-1. Créer les types (`Lang` réutilisé de `i18n.ts`) :
-   `Category { slug, name: {fr,en}, description: {fr,en}, image }` et
-   `EquipmentItem { slug, category, name: {fr,en}, note?: {fr,en}, status, featured }`.
-2. Saisir les données des tableaux « Domaine métier » ci-dessus (3 catégories,
-   12 équipements) en reprenant **mot pour mot** les textes actuels de `i18n.ts`.
-3. Refactorer les consommateurs un par un, en vérifiant visuellement à chaque étape :
-   `CategoriesSection`/`CategoryCard` → `EquipmentPage` → options du `<select>` de
-   `ContactPage` (générées du catalogue, libellé selon la langue).
-4. Supprimer des dictionnaires i18n les données migrées (ne garder que les libellés d'UI).
-5. Vérifier : diff visuel FR/EN nul (comparer les pages avant/après), tsc + eslint.
-
-### Tâches
-
-- [x] `catalog.ts` : types + 3 catégories + 12 équipements.
-- [x] Refactor `CategoriesSection` / `CategoryCard`.
-- [x] Refactor `EquipmentPage`.
-- [x] Options du formulaire de contact générées du catalogue.
-- [ ] Nettoyage des dictionnaires i18n.
-- [x] Statuts affichés depuis le catalogue (`bientôt disponible`, `sur demande`).
-
-**Fait quand** : aucune donnée d'équipement ne subsiste dans `i18n.ts` ; le rendu FR/EN est
-identique à l'existant.
-
----
-
-## Phase 3 — Gestion des images (ImageKit)
-
-**Objectif** : photos servies par le CDN ImageKit (optimisation auto) ; remplacement de
-photos sans redéploiement.
-
-**Dépendances** : aucune pour le code (la Phase 2 doit être finie pour brancher le
-catalogue — sinon garder cette étape pour la fin). 🧍 Création du compte ImageKit par le
-prestataire (plan gratuit : 20 Go de bande passante/mois — largement suffisant).
-**Estimation** : 0,5 jour de code + attente du compte.
-
-**Fichiers** : créer `src/web/src/lib/images.ts`,
-`src/web/src/components/site/CdnImage.tsx` ; modifier `catalog.ts` (clés d'images),
-`CategoryCard.tsx`, `EquipmentPage.tsx`.
-
-### Choix
-
-| Choix | Décision | Justification |
-|---|---|---|
-| SDK côté site public | **Aucun** — helper maison `imageUrl(key, {w,h})` qui concatène l'URL endpoint + transformations (`tr:w-800,f-auto,q-auto`) | Afficher une image ImageKit = construire une URL ; pas besoin de dépendance |
-| Organisation des médias | Dossiers `prestige-locations/{equipements,hero,logo}` ; la **clé** (chemin) est stockée dans le catalogue (`image`) | Correspond au champ `image_key` de la future BD |
-| Variables d'env | `VITE_IMAGEKIT_URL_ENDPOINT` (public, bakée au build). La clé privée n'arrive qu'en Phase 4 (serveur) | Seule l'URL endpoint est nécessaire pour afficher |
-| Images d'ambiance (héro, CTA) | Peuvent rester en assets bundlés (elles ne changent jamais) ; **photos d'équipements** passent par ImageKit | Limiter la migration à ce qui a besoin d'être dynamique |
-| Fallback | Si `VITE_IMAGEKIT_URL_ENDPOINT` absent → assets locaux actuels | Le dev local marche sans compte ImageKit |
-
-### Démarche
-
-1. 🧍 Créer le compte ImageKit, noter l'URL endpoint, créer l'arborescence de dossiers.
-2. 🧍 Téléverser les photos actuelles de `src/web/src/assets/` (via le dashboard ImageKit).
-3. Créer `src/web/src/lib/images.ts` : `imageUrl(key, opts)` + fallback assets locaux.
-4. Créer `<CdnImage>` (wrapper `<img>` : srcset 1x/2x, width/height, loading lazy).
-5. Brancher le catalogue : `Category.image` / `EquipmentItem.image` = clés ImageKit ;
-   `CategoryCard` et `EquipmentPage` utilisent `<CdnImage>`.
-6. Vérifier : Lighthouse avant/après (poids des pages), comportement sans env var.
-
-### Tâches
-
-- [ ] 🧍 Compte ImageKit + dossiers + upload des photos actuelles.
-- [ ] `images.ts` (helper + fallback) et `<CdnImage>`.
-- [ ] Catalogue branché sur les clés ImageKit.
-- [ ] Vérification poids de page + fallback local.
-
-**Fait quand** : les photos d'équipements sont servies par ImageKit en build « prod » et par
-les assets locaux en dev sans configuration.
-
----
-
 ## Phase 4 — Base de données et tableau d'administration
 
 **Objectif** : le gérant peut **ajouter, modifier et téléverser des produits** lui-même,
 sans redéploiement. Le site public lit le catalogue depuis la BD.
 
-**Dépendances** : Phase 2 (types + seed), Phase 3 (upload de photos) ; le compose de la
-Phase 1 (faite) reçoit le service `db`. C'est la phase la plus lourde — exécuter dans l'ordre
+**Dépendances** : Phase 2 (types + seed) et Phase 3 (upload de photos) — faites ; le
+compose de la Phase 1 (faite) reçoit le service `db`. C'est la phase la plus lourde — exécuter dans l'ordre
 **4A (BD) → 4B.1 (auth) → 4B.2 (catalogue) → 4B.3 (demandes) → 4B.4 (calendrier) →
 4B.5 (rapports)** ; chaque bloc a son propre critère de complétion et peut être une PR.
 **Estimation** : 4A ≈ 1–1,5 j ; 4B ≈ 3–4 j.
@@ -406,7 +429,7 @@ src/web/src/
 ### Navigation de l'admin
 
 Layout `/admin` : barre latérale (repliée en menu sur mobile) — **Tableau de bord,
-Équipements, Catégories, Demandes, Calendrier, Rapports, Employés** (superadmin seulement),
+Équipements, Catégories, Demandes, Calendrier, Rapports, Employés** (rôle admin),
 **Mon compte**, Se déconnecter.
 
 | Route | Page | Contenu |
@@ -414,12 +437,14 @@ Layout `/admin` : barre latérale (repliée en menu sur mobile) — **Tableau de
 | `/admin/login` | Connexion | Hors layout protégé |
 | `/admin` | Tableau de bord | Compteurs : demandes `nouvelle`, équipements publiés, prochaines indisponibilités |
 | `/admin/equipements` (+ `/nouveau`, `/$id`) | Équipements | Liste (catégorie, statut, photo, publié) + formulaire |
-| `/admin/categories` | Catégories | Renommage FR/EN, ordre |
+| `/admin/categories` | Catégories | ✔ Création, renommage FR/EN, ordre, suppression (si vide) |
 | `/admin/demandes` | Demandes | Liste filtrable, changement de statut, action « bloquer ces dates » |
-| `/admin/calendrier` | Calendrier | Indisponibilités par équipement (vue mensuelle) |
+| `/admin/commandes` | Commandes | ✔ Locations confirmées : client + équipement + période (création avec client inline, modification des dates, annulation/réactivation, garde anti-chevauchement serveur) |
+| `/admin/calendrier` | Calendrier | Vue mensuelle des périodes réservées (dérivée des commandes) |
 | `/admin/rapports` | Rapports | Compteurs par période, répartition, export CSV |
-| `/admin/apparence` | Apparence | Thème du site : curseurs (fonds, chaleur, teinte, accent), préréglages de couleur d'accent (Or — défaut, Vert, Rouge, Bleu…), aperçu en direct, « Enregistrer » et « Réinitialiser » (retour au thème par défaut) |
-| `/admin/employes` | Employés | superadmin : création, rôle, activation, reset mot de passe |
+| `/admin/parametres` | Paramètres | ✔ Onglet Apparence : thème (curseurs, préréglages Or/Vert/Rouge/Bleu, aperçu, enregistrer/réinitialiser) ; autres réglages à venir |
+| `/admin/pages` | Pages | ✔ Textes FR/EN de chaque page par onglets (Accueil, Services, À propos, Contact, Sections communes), surcharges + retour au texte d'origine ; l'onglet Contact inclut les coordonnées de l'entreprise (téléphone/courriel, servis sur tout le site) |
+| `/admin/employes` | Employés & rôles | ✔ admin : matrice des rôles, création, rôle, activation, reset mot de passe |
 | `/admin/mon-compte` | Mon compte | Changement de son mot de passe |
 
 ### Contrats des server functions
@@ -435,10 +460,10 @@ valide et le rôle indiqué (voir matrice « Acteurs »).
 | `login(email, password)` / `logout()` | public / session | → session cookie / suppression | anti-brute-force |
 | `changeMyPassword(old, new)` | session | → `{ok}` | min. 10 caractères |
 | `list/create/update/deleteEquipment`, `reorderEquipments` | admin+ | CRUD complet → entité | invalide le cache catalogue ; delete = confirmation + suppression image ImageKit |
-| `updateCategory`, `reorderCategories` | admin+ | → entité | invalide le cache |
+| `create/update/deleteCategory`, `reorderCategories` | admin | → entité | invalide le cache ; delete refusé si la catégorie a des équipements |
 | `listRequests(filters)`, `updateRequestStatus(id, status)` | admin+ (`accountant` : lecture) | → liste paginée / entité | trace `handled_by`/`handled_at` |
 | `list/create/deleteUnavailability` | admin+ | equipmentId, dates, raison, note → entité | `create` accepte `request_id` (action « bloquer ces dates ») |
-| `list/create/updateUser`, `resetUserPassword` | superadmin | → entité | jamais de suppression, `active` seulement |
+| `list/create/updateUser`, `resetUserPassword` | admin | → entité | jamais de suppression, `active` seulement ; garde « dernier admin actif » |
 | `getReport(period)`, `exportRequestsCsv(period)` | accountant+ | → agrégats / CSV | volume, répartition équipement/catégorie |
 | `getImageKitSignature()` | admin+ | → `{signature, token, expire}` | la clé privée reste serveur |
 | `getTheme()` | public | — → config thème (ou défaut) | injectée en variables CSS au SSR (root), cache 60 s |
@@ -466,7 +491,7 @@ défaut `now()`, `updated_at` mise à jour par l'application), slugs **immuables
 renommés — ils servent d'identifiant stable pour le seed et ImageKit).
 
 **Enums** : `equipment_status` = `disponible` | `bientot` | `sur_demande` ;
-`user_role` = `superadmin` | `admin` | `accountant` ;
+`user_role` = `admin` | `accountant` ;
 `request_status` = `nouvelle` | `en_cours` | `traitee` | `sans_suite` ;
 `unavailability_reason` = `loue` | `maintenance` | `autre`.
 
@@ -588,17 +613,33 @@ le 2026-07-10). « Réinitialiser » dans l'admin supprime la ligne (retour au d
   (les 3 restants : `featured = false`).
 - `plateforme-elevatrice` → `status = bientot` ; `outillage-specialise` → `sur_demande` ;
   le libellé « (bientôt disponible) » est **dérivé du statut**, pas stocké en note.
-- **1 employé `superadmin`** créé depuis `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD`
+- **1 employé `admin`** créé depuis `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD`
   (env) au premier seed ; jamais écrasé s'il existe. Les autres comptes employés se créent
-  ensuite via l'admin (superadmin uniquement).
+  ensuite via l'admin (rôle admin uniquement).
 - Seed **idempotent** : upsert par `slug` (met à jour les textes, préserve `image_key`,
   `published` et `position` modifiés via l'admin).
 
+#### `customers` et `orders` — avancés depuis la Phase 8 (migration `0002`, 2026-07-11)
+
+- **`customers`** : `id`, `name` (not null), `phone` (not null), `email` (null), `note`
+  (null), timestamps. Créés par les employés pour compléter une commande — **aucune
+  colonne d'auth** ; si la connexion client s'active un jour, une migration ajoutera
+  `password_hash`/`active` sans rien casser.
+- **`orders`** (« Commandes » dans l'admin) : `customer_id` (FK restrict), `equipment_id`
+  (FK restrict), `start_date`/`end_date` (dates inclusives), `status`
+  (`order_status` = `confirmee` | `annulee`, défaut `confirmee`), `note`, `created_by`
+  (FK users, set null), timestamps. Index `(equipment_id, start_date, end_date)` et
+  `(customer_id)`.
+- **Règles** : une commande `confirmee` rend l'équipement **indisponible** sur sa période ;
+  hors de ces périodes il est disponible pour d'autres clients. Chevauchement interdit
+  entre commandes confirmées du même équipement (garde serveur `findOrderConflict`,
+  message clair avec la période en conflit — vérifiée aussi à la modification de dates et
+  à la réactivation). `annulee` libère les dates ; « terminée » est dérivé de
+  `end_date < aujourd'hui`, jamais stocké. Pas de suppression (historique).
+
 #### Prévu pour la Phase 8 (ne pas créer maintenant)
 
-`customers` (nom, téléphone, courriel, notes — les clients de la plateforme, toujours sans
-connexion), `reservations` (customer_id, equipment_id, dates, statut — la réservation
-**confirmée**, qui alimentera le calendrier automatiquement), colonne `quantite` sur
+Connexion client optionnelle (colonnes d'auth sur `customers`), colonne `quantite` sur
 `equipments` (si un équipement existe en plusieurs exemplaires), colonnes tarifaires
 (`price_day`, `price_week`, `price_month`). Le schéma ci-dessus n'a pas besoin de changer
 pour les accueillir.
@@ -613,7 +654,7 @@ pour les accueillir.
    `pg_isready`, env `POSTGRES_*`, aucun port publié) ; publier :5432 dans l'overlay dev ;
    `DATABASE_URL` pour `web`.
 4. `seed.ts` : upsert des 3 catégories + 12 équipements depuis `catalog.ts` (idempotent) +
-   création du `superadmin` (`ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` en env, hash au
+   création de l'`admin` initial (`ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` en env, hash au
    premier run).
 5. Basculer la lecture du site public : server function `getCatalog()` (BD + cache 60 s) ;
    `catalog.ts` ne sert plus qu'au seed et aux types.
@@ -631,19 +672,19 @@ pour les accueillir.
   sans session valide → redirection `/admin/login`. Les server functions d'écriture
   vérifient en plus le rôle (matrice « Acteurs ») — jamais de contrôle côté client seul.
 - **Mot de passe** : l'employé change le sien (page « Mon compte » : ancien + nouveau,
-  min. 10 caractères) ; le `superadmin` peut réinitialiser celui d'un autre employé (défini
+  min. 10 caractères) ; un `admin` peut réinitialiser celui d'un autre employé (défini
   à la main, communiqué hors plateforme). **Pas de « mot de passe oublié » par courriel au
-  lancement** (pas d'envoi de courriels sortants) — la réinitialisation passe par le
-  superadmin ; à revoir si le nombre d'employés grandit.
+  lancement** (pas d'envoi de courriels sortants) — la réinitialisation passe par un
+  admin ; à revoir si le nombre d'employés grandit.
 - **Pas d'auto-inscription** : aucun formulaire public de création de compte ; seuls les
-  superadmins créent des comptes. Désactiver un compte (`active = false`) invalide ses
+  admins créent des comptes. Désactiver un compte (`active = false`) invalide ses
   sessions au prochain contrôle.
 
 ### Démarche — 4B : admin
 
 7. Routes : `/admin/login`, layout `/admin` protégé (voir spécification ci-dessus), pages
    liste + formulaire équipement, page catégories, page « Mon compte », pages comptes
-   employés (superadmin).
+   employés (rôle admin).
 8. Server functions CRUD (`zod` en validation) + invalidation du cache catalogue.
 9. Upload : route serveur `POST /api/imagekit-signature` (session requise) ; composant
    d'upload avec aperçu ; suppression de l'ancienne image ImageKit lors d'un remplacement.
@@ -672,38 +713,65 @@ depuis la BD ; `docker compose down -v && up` re-seed proprement)*
 
 - [x] Workspaces + paquet `@prestige/database` (schéma, migration initiale).
 - [x] Service `db` dans compose (base + overlay dev :5432) + `DATABASE_URL`.
-- [x] `seed.ts` idempotent (catalogue + superadmin).
+- [x] `seed.ts` idempotent (catalogue + admin initial).
 - [x] Site public lit la BD : `db.ts`, `catalog-server.ts` (cache 60 s), `getCatalog()`.
 
 **4B.1 — Authentification** *(fait quand : la recette « auth » ci-dessous passe)*
 
 - [x] `lib/auth.ts` (hash, sessions, `requireUser(role)`) + `lib/rate-limit.ts`.
-- [ ] `/admin/login`, layout protégé, déconnexion, « Mon compte » (changement de mot de
+- [x] `/admin/login`, layout protégé, déconnexion, « Mon compte » (changement de mot de
       passe), conforme à la spécification ci-dessus.
-- [ ] Comptes employés (`/admin/employes`, superadmin) : création, rôle,
-      activation/désactivation, reset mot de passe ; pas de suppression.
+- [x] Comptes employés (`/admin/employes`, rôle admin) : création, rôle,
+      activation/désactivation, reset mot de passe ; pas de suppression. Gardes serveur :
+      dernier admin actif jamais rétrogradé/désactivé, pas d'auto-désactivation,
+      courriel en double → message clair ; erreurs `{ok:false, error}` affichées dans l'UI.
 
 **4B.2 — Catalogue dans l'admin** *(fait quand : ajout d'un équipement avec photo visible
 côté public sans redéploiement)*
 
 - [ ] Tableau de bord `/admin` (compteurs simples).
 - [ ] Équipements : liste + formulaire (FR+EN, statut, featured, publié, ordre).
-- [ ] Catégories : renommage FR/EN, ordre.
-- [ ] Upload photo signé → ImageKit (`getImageKitSignature`), aperçu, remplacement
-      (suppression de l'ancienne image), `image_key` en BD.
+- [x] Catégories : création (slug auto), renommage FR/EN, ordre, suppression si vide
+      (erreur claire sinon) ; toutes les catégories BD affichées sur le site public.
+- [x] Upload photo signé → ImageKit (`getImageKitSignature`), aperçu, remplacement
+      (suppression de l'ancienne image), `image_key` en BD — catégories et équipements
+      (composant `admin/ImageUpload`).
 
-**4B.3 — Demandes de réservation** *(fait quand : une soumission publique apparaît dans
-`/admin/demandes` et le `mailto:` a disparu)*
+**4B.3 — Demandes de réservation** *(FAIT, 2026-07-11 — vérifié en Docker)*
 
-- [ ] `submitReservationRequest` (zod, honeypot, rate limit) + écran de confirmation ;
-      suppression du `mailto:` dans `ContactPage`.
-- [ ] `/admin/demandes` : liste filtrable (statut/équipement/période), changement de statut,
-      trace `handled_by`.
+- [x] `submitReservationRequest` (zod, honeypot, rate limit 5/10 min/IP, revalidation
+      serveur du chevauchement avec les commandes) + écran de confirmation ; le `mailto:`
+      a disparu de `ContactPage`.
+- [x] **Calendrier public** dans le formulaire : équipement choisi → sélection de plage
+      avec les journées des commandes confirmées grisées (`getUnavailableRangesFn`, dates
+      seulement ; `excludeDisabled` empêche d'enjamber une période réservée) ; mention
+      « pas une réservation confirmée » ; « Autre / plusieurs » (défaut, 1ʳᵉ option) →
+      pas de calendrier. **Période obligatoire quand un équipement précis est choisi**
+      (contrôle client + serveur `dates_required`, 2026-07-11) ; « Autre / plusieurs »
+      reste sans dates. Le menu liste **tous** les équipements publiés (les « bientôt » /
+      « sur demande » se demandent aussi). « Vérifier la disponibilité » des pages de
+      catégories → `/contact?equipement=<slug>` : équipement présélectionné, calendrier
+      affiché d'emblée (`validateSearch` sur les routes contact). Calendrier **pleine
+      largeur** (occupe la largeur du champ ; `classNames={{root/months/month:"w-full"}}`
+      + `--cell-size:2.6rem` — le composant shadcn `ui/calendar` est `w-fit` par défaut).
+- [x] **Courriel de notification à l'administrateur** (nouveauté demandée le 2026-07-11,
+      remplace la décision « pas de courriel sortant ») : nodemailer + variables `SMTP_*`
+      (`.env.example`), destinataire = courriel des Coordonnées (BD), **best-effort** —
+      SMTP non configuré → simple log, la demande est toujours enregistrée en BD.
+- [x] `/admin/demandes` : liste (statut, trace `handled_by`, langue, message), changement
+      de statut, et **« Valider → commande »** : trouve ou crée le client (par téléphone),
+      crée la commande liée (`orders.request_id`, migration `0003`), passe la demande en
+      `traitee` — la disponibilité s'ajuste automatiquement (commandes = source de la
+      disponibilité). Conflit de dates → refus avec message.
+- [x] Compteur « Demandes nouvelles » sur le tableau de bord.
 
 **4B.4 — Calendrier de disponibilités** *(fait quand : bloquer des dates dans l'admin les
 grise immédiatement dans le formulaire public)*
 
-- [ ] `/admin/calendrier` : indisponibilités par équipement (ajout/retrait, raison, note).
+- [ ] `/admin/calendrier` : vue mensuelle des périodes réservées par équipement — les
+      indisponibilités sont désormais **dérivées des commandes** (`orders`) ; la table
+      `equipment_unavailabilities` reste disponible pour des blocages manuels
+      (maintenance) si le besoin se confirme.
 - [ ] Action « bloquer ces dates » depuis une demande (pré-remplie, `request_id`).
 - [ ] `AvailabilityPicker` public (jours grisés via `getUnavailableDates`) + revalidation
       serveur du chevauchement + mention « pas une réservation confirmée ».
@@ -717,16 +785,16 @@ téléchargeable ; accessible au rôle `accountant`)*
 l'admin change le site public après enregistrement ; « Réinitialiser » revient au thème
 par défaut)*
 
-- [ ] Extraire la logique du panneau dev (`ThemeTweaker`) vers un module partagé
+- [x] Extraire la logique du panneau dev (`ThemeTweaker`) vers un module partagé
       `theme.ts` : type `ThemeConfig`, constante `DEFAULT_THEME` (valeurs validées de
       `styles.css`), fonction `themeToCssVars(config)`.
-- [ ] `getTheme()` injecté au SSR dans le `<html>` (style inline des variables CSS sur
+- [x] `getTheme()` injecté au SSR dans le `<html>` (style inline des variables CSS sur
       `:root`) — le site public reflète le thème BD sans flash.
-- [ ] `/admin/apparence` : mêmes curseurs que le panneau dev + **préréglages d'accent**
+- [x] `/admin/parametres` (onglet Apparence) : mêmes curseurs que le panneau dev + **préréglages d'accent**
       (Or — défaut, Vert, Rouge, Bleu ; chacun = `{goldL, goldC, goldH}` prédéfini, ex.
       vert ≈ hue 150, rouge ≈ hue 25, bleu ≈ hue 250), aperçu en direct avant
       enregistrement, `updateTheme` / `resetTheme`.
-- [ ] Le panneau dev reste pour le prototypage local ; l'admin devient la voie officielle.
+- [x] Le panneau dev reste pour le prototypage local ; l'admin devient la voie officielle.
 
 ### Recette manuelle (avant de clore la phase)
 
@@ -742,11 +810,11 @@ par défaut)*
    silencieux ; 10 soumissions rapides → rate limit.
 5. **Calendrier** : bloquer une période → grisée côté public immédiatement (cache
    invalidé) ; « bloquer ces dates » depuis une demande → indisponibilité liée.
-6. **Employés** : superadmin crée un `admin` → il se connecte ; désactivation → session
+6. **Employés** : un admin crée un autre employé → il se connecte ; désactivation → session
    invalidée.
 7. **Rapports** : compteurs cohérents avec la BD ; export CSV lisible.
 8. **From scratch** : `docker compose down -v && up` → site seedé fonctionnel + login
-   superadmin.
+   de l'admin initial.
 9. **Apparence** : appliquer le préréglage « Vert » → le site public change après
    enregistrement ; « Réinitialiser » → retour exact au thème par défaut.
 10. **Mobile** : tout le parcours admin au viewport 375 px.

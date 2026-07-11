@@ -8,7 +8,7 @@ export type SessionUser = {
   id: number;
   email: string;
   name: string;
-  role: "superadmin" | "admin" | "accountant";
+  role: "admin" | "accountant";
 };
 
 export const getSessionFn = createServerFn({ method: "GET" }).handler(

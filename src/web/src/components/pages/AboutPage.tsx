@@ -3,7 +3,7 @@ import { Handshake, MapPin, Sparkles } from "lucide-react";
 import { SectionTitle } from "@/components/site/SectionTitle";
 import { CtaSection } from "@/components/site/CtaSection";
 import { pagePaths, useLang, useT } from "@/lib/i18n";
-import heroImage from "@/assets/hero-excavator.jpg";
+import missionImage from "@/assets/hero-excavator3.jpg";
 
 const valueIcons = [Sparkles, Handshake, MapPin];
 
@@ -23,7 +23,7 @@ export function AboutPage() {
 
       <section className="mx-auto grid max-w-7xl items-center gap-10 px-4 pb-20 md:grid-cols-2 lg:px-8">
         <img
-          src={heroImage}
+          src={missionImage}
           alt={t.aboutPage.imageAlt}
           width={1536}
           height={1024}

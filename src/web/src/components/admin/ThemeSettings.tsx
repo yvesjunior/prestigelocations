@@ -1,13 +1,7 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ACCENT_PRESETS, DEFAULT_THEME, themeToCssVars, type ThemeConfig } from "@/lib/theme";
-import { getThemeForAdminFn, resetThemeFn, updateThemeFn } from "@/server/admin";
-
-export const Route = createFileRoute("/admin/apparence")({
-  head: () => ({ meta: [{ title: "Apparence | Administration" }] }),
-  loader: async () => ({ theme: await getThemeForAdminFn() }),
-  component: AppearancePage,
-});
+import { resetThemeFn, updateThemeFn } from "@/server/admin";
 
 const SLIDERS: { key: keyof ThemeConfig; label: string; min: number; max: number; step: number }[] =
   [
@@ -34,8 +28,7 @@ function clearPreview() {
   for (const k of Object.keys(themeToCssVars(DEFAULT_THEME))) root.removeProperty(k);
 }
 
-function AppearancePage() {
-  const { theme: saved } = Route.useLoaderData();
+export function ThemeSettings({ saved }: { saved: ThemeConfig }) {
   const router = useRouter();
   const [theme, setTheme] = useState<ThemeConfig>(saved);
   const [busy, setBusy] = useState(false);
@@ -69,8 +62,7 @@ function AppearancePage() {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-xl font-bold">Apparence du site</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
+      <p className="text-sm text-muted-foreground">
         Les réglages s'appliquent en aperçu sur cette page ; « Enregistrer » les publie sur le site.
         « Réinitialiser » revient au thème par défaut.
       </p>

@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 import type { AdminCategory, AdminEquipment } from "@/server/admin";
 
 export interface EquipmentFormValues {
   slug: string;
+  code: string | null;
   categoryId: number;
   nameFr: string;
   nameEn: string;
@@ -11,6 +13,7 @@ export interface EquipmentFormValues {
   formLabelFr: string | null;
   formLabelEn: string | null;
   status: "disponible" | "bientot" | "sur_demande";
+  imageKey: string | null;
   featured: boolean;
   published: boolean;
   position: number;
@@ -46,6 +49,7 @@ export function EquipmentForm({
 }) {
   const [v, setV] = useState<EquipmentFormValues>({
     slug: initial.slug ?? "",
+    code: initial.code ?? null,
     categoryId: initial.categoryId ?? categories[0]?.id ?? 0,
     nameFr: initial.nameFr ?? "",
     nameEn: initial.nameEn ?? "",
@@ -54,6 +58,7 @@ export function EquipmentForm({
     formLabelFr: initial.formLabelFr ?? null,
     formLabelEn: initial.formLabelEn ?? null,
     status: initial.status ?? "disponible",
+    imageKey: initial.imageKey ?? null,
     featured: initial.featured ?? false,
     published: initial.published ?? true,
     position: initial.position ?? 0,
@@ -173,6 +178,16 @@ export function EquipmentForm({
           />
         </div>
         <div>
+          <label className={labelCls}>Code (optionnel)</label>
+          <input
+            value={v.code ?? ""}
+            onChange={(e) => set("code", e.target.value || null)}
+            placeholder="Ex. MP-01"
+            title="Distingue deux unités portant le même nom — affiché entre parenthèses"
+            className={inputCls}
+          />
+        </div>
+        <div>
           <label className={labelCls}>Identifiant (slug)</label>
           <input
             value={v.slug}
@@ -206,9 +221,15 @@ export function EquipmentForm({
         </label>
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        Photo : le téléversement d'images arrive avec l'intégration ImageKit (Phase 3).
-      </p>
+      <div>
+        <label className={labelCls}>Photo</label>
+        <ImageUpload
+          imageKey={v.imageKey}
+          folder="equipements"
+          alt={v.nameFr || "Équipement"}
+          onChange={(key) => set("imageKey", key)}
+        />
+      </div>
 
       <div className="flex items-center gap-3 border-t border-border/60 pt-5">
         <button type="submit" disabled={busy} className="btn-gold disabled:opacity-60">

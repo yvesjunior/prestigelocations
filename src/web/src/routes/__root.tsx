@@ -14,7 +14,8 @@ import appCss from "../styles.css?url";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { ThemeTweaker } from "@/components/dev/ThemeTweaker";
-import { getThemeFn } from "@/server/public";
+import { getContactFn, getPageContentFn, getThemeFn } from "@/server/public";
+import { DEFAULT_CONTACT } from "@/lib/contact";
 import { themeToCss } from "@/lib/theme";
 import { pagePaths, useLang, useT } from "@/lib/i18n";
 
@@ -37,11 +38,41 @@ function NotFoundComponent() {
   );
 }
 
+function MaintenanceComponent() {
+  const t = useT();
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="max-w-md text-center">
+        <p className="font-serif text-lg font-bold tracking-wide text-primary">
+          PRESTIGE LOCATIONS
+        </p>
+        <h1 className="mt-4 text-xl font-semibold tracking-tight text-foreground">
+          {t.maintenancePage.title}
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">{t.maintenancePage.text}</p>
+        <div className="mt-6">
+          {/* Rechargement complet : le loader racine a échoué au SSR, un simple
+              reset du routeur ne suffit pas à repartir d'un état sain. */}
+          <button onClick={() => window.location.reload()} className="btn-gold">
+            {t.maintenancePage.retry}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   const lang = useLang();
   const t = useT();
+
+  // BD injoignable (SERVICE_UNAVAILABLE) → page de maintenance, jamais de
+  // contenu statique périmé.
+  if (error.message.includes("SERVICE_UNAVAILABLE")) {
+    return <MaintenanceComponent />;
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -70,17 +101,24 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  // Thème (BD, cache 60 s) injecté en variables CSS — l'admin est la source de vérité.
-  loader: async () => ({ theme: await getThemeFn() }),
-  head: () => ({
+  // Thème + coordonnées (BD, cache 60 s) — l'admin est la source de vérité.
+  loader: async () => {
+    const [theme, contact, content] = await Promise.all([
+      getThemeFn(),
+      getContactFn(),
+      getPageContentFn(),
+    ]);
+    return { theme, contact, content };
+  },
+  head: ({ loaderData }) => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Prestige Locations | Location d'équipements à Sherbrooke" },
       {
         name: "description",
-        content:
-          "Location d'équipements fiables à Sherbrooke : mini-pelle, remorques, compacteurs et plus. Simple, rapide et sans tracas. 819-269-3129.",
+        // Téléphone depuis la BD (repli sur le défaut si le loader a échoué).
+        content: `Location d'équipements fiables à Sherbrooke : mini-pelle, remorques, compacteurs et plus. Simple, rapide et sans tracas. ${loaderData?.contact.phone ?? DEFAULT_CONTACT.phone}.`,
       },
       { name: "author", content: "Prestige Locations" },
       {
@@ -149,7 +187,8 @@ function RootComponent() {
           <Footer />
         </div>
       )}
-      {import.meta.env.DEV && !isAdmin && <ThemeTweaker />}
+      {/* Panneau de réglage local — activé uniquement par VITE_THEME_TWEAKER=1 (tests) */}
+      {import.meta.env.VITE_THEME_TWEAKER === "1" && !isAdmin && <ThemeTweaker />}
     </QueryClientProvider>
   );
 }

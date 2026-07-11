@@ -8,11 +8,14 @@ import {
 } from "@tanstack/react-router";
 import {
   CalendarDays,
+  ClipboardList,
+  FileText,
+  Inbox,
   Home,
   Layers,
   LogOut,
   Menu,
-  Palette,
+  Settings,
   Tags,
   UserCircle,
   Users,
@@ -37,16 +40,19 @@ type NavItem = {
   icon: typeof Home;
   exact?: boolean;
   disabled?: boolean;
-  superadminOnly?: boolean;
+  adminOnly?: boolean;
 };
 
 const NAV: NavItem[] = [
   { to: "/admin", label: "Tableau de bord", icon: Home, exact: true },
   { to: "/admin/equipements", label: "Équipements", icon: Layers },
   { to: "/admin/categories", label: "Catégories", icon: Tags },
+  { to: "/admin/demandes", label: "Demandes", icon: Inbox },
+  { to: "/admin/commandes", label: "Commandes", icon: ClipboardList },
+  { to: "/admin/pages", label: "Pages", icon: FileText },
   { to: "/admin/calendrier", label: "Calendrier", icon: CalendarDays, disabled: true },
-  { to: "/admin/apparence", label: "Apparence", icon: Palette },
-  { to: "/admin/employes", label: "Employés", icon: Users, superadminOnly: true },
+  { to: "/admin/parametres", label: "Paramètres", icon: Settings },
+  { to: "/admin/employes", label: "Employés & rôles", icon: Users, adminOnly: true },
   { to: "/admin/mon-compte", label: "Mon compte", icon: UserCircle },
 ];
 
@@ -64,7 +70,7 @@ function AdminLayout() {
     navigate({ to: "/admin/login" });
   }
 
-  const links = NAV.filter((n) => !n.superadminOnly || session?.role === "superadmin");
+  const links = NAV.filter((n) => !n.adminOnly || session?.role === "admin");
 
   const nav = (
     <nav className="flex flex-col gap-1 p-3">

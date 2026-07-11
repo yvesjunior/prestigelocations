@@ -2,7 +2,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { CalendarCheck, Menu, X } from "lucide-react";
 import { useState } from "react";
 import logo from "@/assets/logo.png";
-import { pagePaths, useLang, useT, type Lang, type PageKey } from "@/lib/i18n";
+import { categoryPagePath, pagePaths, useLang, useT, type Lang, type PageKey } from "@/lib/i18n";
 
 function LangSwitcher({ className = "" }: { className?: string }) {
   const lang = useLang();
@@ -11,6 +11,13 @@ function LangSwitcher({ className = "" }: { className?: string }) {
     (Object.keys(pagePaths) as PageKey[]).find((k) =>
       Object.values(pagePaths[k]).includes(pathname as never),
     ) ?? "home";
+  // Page de catégorie (slug partagé entre les langues) : bascule vers la même
+  // catégorie dans l'autre langue.
+  const categorySlug =
+    pathname.match(/^\/fr\/equipements\/([^/]+)$/)?.[1] ??
+    pathname.match(/^\/en\/equipment\/([^/]+)$/)?.[1];
+  const pathFor = (l: Lang) =>
+    categorySlug ? categoryPagePath(categorySlug, l) : pagePaths[currentKey][l];
 
   return (
     <div
@@ -23,7 +30,7 @@ function LangSwitcher({ className = "" }: { className?: string }) {
             <span className="text-primary">{l}</span>
           ) : (
             <Link
-              to={pagePaths[currentKey][l]}
+              to={pathFor(l)}
               className="text-foreground/60 transition-colors hover:text-primary"
             >
               {l}

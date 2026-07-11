@@ -42,12 +42,10 @@ export async function currentUser(): Promise<SessionUser | null> {
 }
 
 /** Garde serveur : session requise + rôle suffisant. Jette une erreur sinon. */
-export async function requireUser(
-  minRole: "accountant" | "admin" | "superadmin" = "admin",
-): Promise<SessionUser> {
+export async function requireUser(minRole: "accountant" | "admin" = "admin"): Promise<SessionUser> {
   const user = await currentUser();
   if (!user) throw new Error("UNAUTHENTICATED");
-  const level = { accountant: 0, admin: 1, superadmin: 2 } as const;
+  const level = { accountant: 0, admin: 1 } as const;
   // accountant = lecture seule : toute fonction exigeant "admin" lui est refusée.
   if (level[user.role] < level[minRole]) throw new Error("FORBIDDEN");
   return user;

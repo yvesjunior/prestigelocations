@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Layers, Users } from "lucide-react";
+import { ClipboardList, Inbox, Layers, Users } from "lucide-react";
 import { getAdminStatsFn } from "@/server/admin";
 
 export const Route = createFileRoute("/admin/")({
@@ -12,6 +12,18 @@ function DashboardPage() {
   const { stats } = Route.useLoaderData();
 
   const cards = [
+    {
+      to: "/admin/demandes",
+      icon: Inbox,
+      label: "Demandes nouvelles",
+      value: stats.newRequests,
+    },
+    {
+      to: "/admin/commandes",
+      icon: ClipboardList,
+      label: "Locations en cours",
+      value: stats.activeOrders,
+    },
     {
       to: "/admin/equipements",
       icon: Layers,
@@ -38,8 +50,7 @@ function DashboardPage() {
         ))}
       </div>
       <p className="mt-8 text-sm text-muted-foreground">
-        Les demandes de réservation et le calendrier de disponibilités arrivent dans la prochaine
-        itération.
+        Le calendrier de disponibilités (vue mensuelle) arrive dans une prochaine itération.
       </p>
     </div>
   );

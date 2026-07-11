@@ -1,5 +1,8 @@
-import { useLocation } from "@tanstack/react-router";
-import { BASE_URL, EMAIL, PHONE_DISPLAY } from "./site";
+import { getRouteApi, useLocation } from "@tanstack/react-router";
+import { useMemo } from "react";
+import { DEFAULT_CONTACT } from "./contact";
+import { setPath, type ContentOverrides } from "./content";
+import { BASE_URL } from "./site";
 
 export type Lang = "fr" | "en";
 
@@ -12,6 +15,11 @@ export const pagePaths = {
 } as const;
 
 export type PageKey = keyof typeof pagePaths;
+
+/** Chemin de la page publique d'une catégorie (slug partagé entre les langues). */
+export function categoryPagePath(slug: string, lang: Lang): string {
+  return lang === "fr" ? `/fr/equipements/${slug}` : `/en/equipment/${slug}`;
+}
 
 export function useLang(): Lang {
   const pathname = useLocation({ select: (l) => l.pathname });
@@ -39,6 +47,9 @@ const fr = {
     cta: "Réserver maintenant",
     phoneNote: "Réponse rapide garantie",
     imageAlt: "Mini-pelle sur un chantier au crépuscule",
+    imageAlt2: "Tracteur compact avec chargeur frontal",
+    imageAlt3: "Mini-pelle Bobcat en train de creuser",
+    imageAlt4: "Chargeuse-pelleteuse déversant du gravier",
   },
   features: [
     {
@@ -58,48 +69,13 @@ const fr = {
       text: "Une équipe disponible et à l'écoute pour vous accompagner dans vos projets.",
     },
   ],
+  // Les données des catégories/équipements vivent en BD (admin) — ici, uniquement
+  // les libellés d'interface.
   categoriesSection: {
     eyebrow: "Nos équipements",
-    title: "Trois catégories",
+    title: "Nos catégories",
     subtitle: "Pour répondre à tous vos besoins",
     andMore: "Et plus encore",
-    categories: [
-      {
-        title: "Machinerie",
-        description:
-          "Des machines performantes pour vos travaux d'excavation, de terrassement et plus encore.",
-        cta: "Voir la machinerie",
-        items: [
-          { label: "Mini-pelle" },
-          { label: "Tracteur compact" },
-          { label: "Plateforme élévatrice", note: "(bientôt disponible)" },
-          { label: "Et plus encore" },
-        ],
-      },
-      {
-        title: "Remorques",
-        description:
-          "Une vaste sélection de remorques pour transporter vos matériaux et équipements.",
-        cta: "Voir les remorques",
-        items: [
-          { label: "Trailer dompeur" },
-          { label: "Trailer fermé" },
-          { label: "Trailer plateforme" },
-          { label: "Et plus encore" },
-        ],
-      },
-      {
-        title: "Petits équipements",
-        description: "L'outillage et les petits équipements essentiels pour bien faire le travail.",
-        cta: "Voir les petits équipements",
-        items: [
-          { label: "Compacteurs" },
-          { label: "Scies à béton" },
-          { label: "Marteaux-piqueurs" },
-          { label: "Et plus encore" },
-        ],
-      },
-    ],
   },
   ctaSection: {
     titleLine1: "Prêt à réaliser",
@@ -136,11 +112,16 @@ const fr = {
     retry: "Réessayer",
     home: "Accueil",
   },
+  maintenancePage: {
+    title: "Site en maintenance",
+    text: "Nous effectuons une courte maintenance. Merci de réessayer dans quelques instants.",
+    retry: "Réessayer",
+  },
   meta: {
     home: {
       title: "Prestige Locations | Location d'équipements à Sherbrooke",
       description:
-        "Location d'équipements fiables à Sherbrooke : mini-pelle, remorques, compacteurs et plus. Simple, rapide et sans tracas. 819-269-3129.",
+        "Location d'équipements fiables à Sherbrooke : mini-pelle, remorques, compacteurs et plus. Simple, rapide et sans tracas. {phone}.",
       ogDescription:
         "Le bon équipement, au bon moment. Machinerie, remorques et petits équipements en location à la journée, semaine ou mois.",
     },
@@ -166,7 +147,7 @@ const fr = {
     contact: {
       title: "Contact & Réservation | Prestige Locations",
       description:
-        "Réservez votre équipement dès aujourd'hui. Appelez le 819-269-3129 ou écrivez-nous — réponse rapide garantie.",
+        "Réservez votre équipement dès aujourd'hui. Appelez le {phone} ou écrivez-nous — réponse rapide garantie.",
       ogDescription: "Réservez votre équipement dès aujourd'hui. Réponse rapide garantie.",
     },
   },
@@ -175,44 +156,11 @@ const fr = {
     title: "Notre inventaire",
     subtitle: "Tout ce qu'il faut pour vos projets",
     checkAvailability: "Vérifier la disponibilité",
-    sections: [
-      {
-        title: "Machinerie",
-        alt: "Mini-pelle sur un chantier",
-        description:
-          "Des machines performantes et bien entretenues pour vos travaux d'excavation, de terrassement, d'aménagement paysager et plus encore.",
-        items: [
-          "Mini-pelle (excavatrice compacte)",
-          "Tracteur compact avec accessoires",
-          "Plateforme élévatrice (bientôt disponible)",
-          "Godets et accessoires variés",
-        ],
-      },
-      {
-        title: "Remorques",
-        alt: "Remorques dompeur, fermée et plateforme",
-        description:
-          "Une vaste sélection de remorques pour transporter vos matériaux, véhicules et équipements en toute sécurité.",
-        items: [
-          "Trailer dompeur — idéal pour la terre, la pierre et les débris",
-          "Trailer fermé — protégez votre cargaison des intempéries",
-          "Trailer plateforme — pour véhicules et machinerie",
-          "Attaches et accessoires de remorquage",
-        ],
-      },
-      {
-        title: "Petits équipements",
-        alt: "Compacteur, scie à béton et marteau-piqueur",
-        description:
-          "L'outillage et les petits équipements essentiels pour bien faire le travail, du début à la fin.",
-        items: [
-          "Compacteurs à plaque vibrante",
-          "Scies à béton",
-          "Marteaux-piqueurs",
-          "Outillage spécialisé sur demande",
-        ],
-      },
-    ],
+  },
+  categoryPage: {
+    back: "Tous nos équipements",
+    empty:
+      "Les équipements de cette catégorie arrivent bientôt — contactez-nous pour en savoir plus.",
   },
   servicesPage: {
     eyebrow: "Nos services",
@@ -301,30 +249,29 @@ const fr = {
     formTitle: "Demande de réservation",
     formIntro: "Remplissez le formulaire et nous vous répondrons rapidement.",
     sentTitle: "Merci !",
-    sentText: `Votre application courriel devrait s'ouvrir. Vous pouvez aussi nous appeler au ${PHONE_DISPLAY}.`,
+    sentText:
+      "Votre demande a bien été envoyée — nous vous recontacterons rapidement. Vous pouvez aussi nous appeler au {phone}.",
     nameLabel: "Nom complet",
     namePlaceholder: "Votre nom",
     phoneLabel: "Téléphone",
     phonePlaceholder: "819-000-0000",
     equipmentLabel: "Équipement souhaité",
-    equipmentOptions: [
-      "Mini-pelle",
-      "Tracteur compact",
-      "Trailer dompeur",
-      "Trailer fermé",
-      "Trailer plateforme",
-      "Compacteur",
-      "Scie à béton",
-      "Marteau-piqueur",
-      "Autre / plusieurs équipements",
-    ],
     otherOption: "Autre / plusieurs équipements",
+    datesLabel: "Période souhaitée",
+    datesHint: "Les journées grisées sont déjà réservées.",
+    datesSelected: "Du {start} au {end}",
+    datesClear: "Effacer les dates",
+    notBookingNote:
+      "Votre demande ne constitue pas une réservation confirmée — nous vous recontactons pour la finaliser.",
     messageLabel: "Message",
-    messagePlaceholder: "Dates souhaitées, durée de location, détails du projet...",
+    messagePlaceholder: "Durée de location, détails du projet...",
     submit: "Envoyer ma demande",
-    mailSubject: "Demande de réservation",
-    mailFallbackEquipment: "Équipement",
-    mailBody: { name: "Nom", phone: "Téléphone", equipment: "Équipement", message: "Message" },
+    errors: {
+      rate_limited: "Trop de demandes envoyées. Merci de réessayer dans quelques minutes.",
+      conflict: "Cette période vient d'être réservée. Choisissez d'autres dates ou contactez-nous.",
+      dates_required: "Choisissez la période souhaitée dans le calendrier.",
+      generic: "L'envoi a échoué. Réessayez ou appelez-nous au {phone}.",
+    },
   },
 };
 
@@ -351,6 +298,9 @@ const en: Dict = {
     cta: "Book now",
     phoneNote: "Fast response guaranteed",
     imageAlt: "Mini excavator on a job site at dusk",
+    imageAlt2: "Compact tractor with front loader",
+    imageAlt3: "Bobcat mini excavator digging",
+    imageAlt4: "Backhoe loader dumping gravel",
   },
   features: [
     {
@@ -372,45 +322,9 @@ const en: Dict = {
   ],
   categoriesSection: {
     eyebrow: "Our equipment",
-    title: "Three categories",
+    title: "Our categories",
     subtitle: "To meet all your needs",
     andMore: "And more",
-    categories: [
-      {
-        title: "Machinery",
-        description:
-          "High-performance machines for your excavation, grading and earthmoving work, and more.",
-        cta: "See the machinery",
-        items: [
-          { label: "Mini excavator" },
-          { label: "Compact tractor" },
-          { label: "Aerial lift", note: "(coming soon)" },
-          { label: "And more" },
-        ],
-      },
-      {
-        title: "Trailers",
-        description: "A wide selection of trailers to haul your materials and equipment.",
-        cta: "See the trailers",
-        items: [
-          { label: "Dump trailer" },
-          { label: "Enclosed trailer" },
-          { label: "Flatbed trailer" },
-          { label: "And more" },
-        ],
-      },
-      {
-        title: "Small equipment",
-        description: "The essential tools and small equipment to get the job done right.",
-        cta: "See the small equipment",
-        items: [
-          { label: "Plate compactors" },
-          { label: "Concrete saws" },
-          { label: "Jackhammers" },
-          { label: "And more" },
-        ],
-      },
-    ],
   },
   ctaSection: {
     titleLine1: "Ready to bring",
@@ -442,11 +356,16 @@ const en: Dict = {
     retry: "Try again",
     home: "Home",
   },
+  maintenancePage: {
+    title: "Site under maintenance",
+    text: "We're doing a short maintenance. Please try again in a few moments.",
+    retry: "Try again",
+  },
   meta: {
     home: {
       title: "Prestige Locations | Equipment Rentals in Sherbrooke",
       description:
-        "Reliable equipment rentals in Sherbrooke: mini excavator, trailers, compactors and more. Simple, fast and hassle-free. 819-269-3129.",
+        "Reliable equipment rentals in Sherbrooke: mini excavator, trailers, compactors and more. Simple, fast and hassle-free. {phone}.",
       ogDescription:
         "The right equipment, at the right time. Machinery, trailers and small equipment for rent by the day, week or month.",
     },
@@ -471,7 +390,7 @@ const en: Dict = {
     contact: {
       title: "Contact & Booking | Prestige Locations",
       description:
-        "Book your equipment today. Call 819-269-3129 or write to us — fast response guaranteed.",
+        "Book your equipment today. Call {phone} or write to us — fast response guaranteed.",
       ogDescription: "Book your equipment today. Fast response guaranteed.",
     },
   },
@@ -480,44 +399,10 @@ const en: Dict = {
     title: "Our inventory",
     subtitle: "Everything you need for your projects",
     checkAvailability: "Check availability",
-    sections: [
-      {
-        title: "Machinery",
-        alt: "Mini excavator on a job site",
-        description:
-          "High-performance, well-maintained machines for your excavation, grading, landscaping work and more.",
-        items: [
-          "Mini excavator (compact excavator)",
-          "Compact tractor with attachments",
-          "Aerial lift (coming soon)",
-          "Buckets and various attachments",
-        ],
-      },
-      {
-        title: "Trailers",
-        alt: "Dump, enclosed and flatbed trailers",
-        description:
-          "A wide selection of trailers to haul your materials, vehicles and equipment safely.",
-        items: [
-          "Dump trailer — ideal for soil, stone and debris",
-          "Enclosed trailer — protect your cargo from the weather",
-          "Flatbed trailer — for vehicles and machinery",
-          "Hitches and towing accessories",
-        ],
-      },
-      {
-        title: "Small equipment",
-        alt: "Compactor, concrete saw and jackhammer",
-        description:
-          "The essential tools and small equipment to get the job done right, from start to finish.",
-        items: [
-          "Vibrating plate compactors",
-          "Concrete saws",
-          "Jackhammers",
-          "Specialized tools on request",
-        ],
-      },
-    ],
+  },
+  categoryPage: {
+    back: "All our equipment",
+    empty: "Equipment for this category is coming soon — contact us to learn more.",
   },
   servicesPage: {
     eyebrow: "Our services",
@@ -606,48 +491,70 @@ const en: Dict = {
     formTitle: "Booking request",
     formIntro: "Fill out the form and we'll get back to you quickly.",
     sentTitle: "Thank you!",
-    sentText: `Your email app should open. You can also call us at ${PHONE_DISPLAY}.`,
+    sentText:
+      "Your request has been sent — we'll get back to you shortly. You can also call us at {phone}.",
     nameLabel: "Full name",
     namePlaceholder: "Your name",
     phoneLabel: "Phone",
     phonePlaceholder: "819-000-0000",
     equipmentLabel: "Desired equipment",
-    equipmentOptions: [
-      "Mini excavator",
-      "Compact tractor",
-      "Dump trailer",
-      "Enclosed trailer",
-      "Flatbed trailer",
-      "Compactor",
-      "Concrete saw",
-      "Jackhammer",
-      "Other / multiple items",
-    ],
     otherOption: "Other / multiple items",
+    datesLabel: "Desired period",
+    datesHint: "Greyed-out days are already booked.",
+    datesSelected: "From {start} to {end}",
+    datesClear: "Clear dates",
+    notBookingNote: "Your request is not a confirmed booking — we'll contact you to finalize it.",
     messageLabel: "Message",
-    messagePlaceholder: "Desired dates, rental duration, project details...",
+    messagePlaceholder: "Rental duration, project details...",
     submit: "Send my request",
-    mailSubject: "Booking request",
-    mailFallbackEquipment: "Equipment",
-    mailBody: { name: "Name", phone: "Phone", equipment: "Equipment", message: "Message" },
+    errors: {
+      rate_limited: "Too many requests sent. Please try again in a few minutes.",
+      conflict: "This period was just booked. Pick other dates or contact us.",
+      dates_required: "Please select your desired period in the calendar.",
+      generic: "Sending failed. Try again or call us at {phone}.",
+    },
   },
 };
 
 export const translations: Record<Lang, Dict> = { fr, en };
 
+const rootApi = getRouteApi("__root__");
+
+/** Surcharges de contenu enregistrées via l'admin (« Pages »), fusionnées au dictionnaire. */
+function useContentOverrides(): ContentOverrides {
+  let data: { content?: ContentOverrides } | undefined;
+  try {
+    data = rootApi.useLoaderData() as { content?: ContentOverrides } | undefined;
+  } catch {
+    data = undefined;
+  }
+  return data?.content ?? {};
+}
+
 export function useT(): Dict {
-  return translations[useLang()];
+  const lang = useLang();
+  const overrides = useContentOverrides();
+  return useMemo(() => {
+    const entries = Object.entries(overrides);
+    if (entries.length === 0) return translations[lang];
+    const dict = structuredClone(translations[lang]);
+    for (const [path, value] of entries) setPath(dict, path, value[lang]);
+    return dict;
+  }, [lang, overrides]);
 }
 
 /** Head (title/meta/hreflang links) for a localized page. */
-export function pageHead(key: PageKey, lang: Lang) {
+export function pageHead(key: PageKey, lang: Lang, phone?: string) {
   const m = translations[lang].meta[key];
+  // Le téléphone vient de la BD (loader racine) ; le défaut ne sert qu'aux
+  // rendus sans loader (page d'erreur/maintenance, où les meta importent peu).
+  const withPhone = (s: string) => s.replaceAll("{phone}", phone ?? DEFAULT_CONTACT.phone);
   return {
     meta: [
       { title: m.title },
-      { name: "description", content: m.description },
+      { name: "description", content: withPhone(m.description) },
       { property: "og:title", content: m.title },
-      { property: "og:description", content: m.ogDescription },
+      { property: "og:description", content: withPhone(m.ogDescription) },
     ],
     links: BASE_URL
       ? [
@@ -658,5 +565,3 @@ export function pageHead(key: PageKey, lang: Lang) {
       : [],
   };
 }
-
-export { EMAIL, PHONE_DISPLAY };

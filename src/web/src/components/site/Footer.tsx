@@ -2,7 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { Mail, MapPin, Phone } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { pagePaths, useLang, useT } from "@/lib/i18n";
-import { EMAIL, PHONE_DISPLAY, PHONE_HREF } from "@/lib/site";
+import { phoneHref } from "@/lib/contact";
+import { useContact } from "@/lib/useContact";
 
 function FacebookIcon({ className }: { className?: string }) {
   return (
@@ -32,6 +33,7 @@ function InstagramIcon({ className }: { className?: string }) {
 export function Footer() {
   const lang = useLang();
   const t = useT();
+  const contact = useContact();
 
   return (
     <footer className="border-t border-border/60 bg-surface">
@@ -98,20 +100,20 @@ export function Footer() {
           <ul className="mt-4 space-y-3">
             <li>
               <a
-                href={PHONE_HREF}
+                href={phoneHref(contact.phone)}
                 className="flex items-center gap-2.5 text-sm text-foreground/80 transition-colors hover:text-primary"
               >
                 <Phone className="h-4 w-4 shrink-0 text-primary" />
-                {PHONE_DISPLAY}
+                {contact.phone}
               </a>
             </li>
             <li>
               <a
-                href={`mailto:${EMAIL}`}
+                href={`mailto:${contact.email}`}
                 className="flex items-center gap-2.5 text-sm text-foreground/80 transition-colors hover:text-primary"
               >
                 <Mail className="h-4 w-4 shrink-0 text-primary" />
-                {EMAIL}
+                {contact.email}
               </a>
             </li>
             <li className="flex items-start gap-2.5 text-sm text-foreground/80">

@@ -25,6 +25,24 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/en/contact", changefreq: "monthly", priority: "0.8" },
         ];
 
+        // Pages de catégories (BD). BD indisponible → sitemap sans elles,
+        // plutôt qu'une erreur 500.
+        try {
+          const [{ cached }, { loadCatalog }] = await Promise.all([
+            import("@/server/cache"),
+            import("@/server/impl/public"),
+          ]);
+          const catalog = await cached("catalog", 60_000, loadCatalog);
+          for (const c of catalog.categories) {
+            entries.push(
+              { path: `/fr/equipements/${c.slug}`, changefreq: "weekly", priority: "0.8" },
+              { path: `/en/equipment/${c.slug}`, changefreq: "weekly", priority: "0.8" },
+            );
+          }
+        } catch (err) {
+          console.error("sitemap : catégories ignorées (BD indisponible).", err);
+        }
+
         const urls = entries.map((e) =>
           [
             `  <url>`,

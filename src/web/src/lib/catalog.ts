@@ -1,6 +1,6 @@
-// Catalogue des équipements — source des données métier (Phase 2).
-// Sert de seed à la base de données (Phase 4) et de secours si la BD est
-// indisponible. Les textes reprennent mot pour mot le contenu du site.
+// Données de seed du catalogue (types + contenu initial de la BD).
+// La BD est la SEULE source de contenu du site : ce fichier n'est jamais
+// affiché — si la BD est indisponible, le site montre la page de maintenance.
 
 export type Localized = { fr: string; en: string };
 export type EquipmentStatus = "disponible" | "bientot" | "sur_demande";
@@ -20,6 +20,8 @@ export interface CatalogCategory {
 
 export interface CatalogEquipment {
   slug: string;
+  /** Code court optionnel (ex. « MP-01 ») pour distinguer deux unités du même nom. */
+  code?: string | null;
   category: string;
   /** Nom court (carte de l'accueil, listes). */
   name: Localized;
@@ -37,6 +39,11 @@ export interface CatalogEquipment {
 export interface CatalogData {
   categories: CatalogCategory[];
   equipments: CatalogEquipment[];
+}
+
+/** Nom affiché, suivi du code entre parenthèses quand il existe. */
+export function withCode(name: string, code?: string | null): string {
+  return code ? `${name} (${code})` : name;
 }
 
 /** Suffixe affiché après le nom selon le statut (dérivé, jamais stocké). */
@@ -60,7 +67,7 @@ export const catalogCategories: CatalogCategory[] = [
     },
     cta: { fr: "Voir la machinerie", en: "See the machinery" },
     alt: { fr: "Mini-pelle sur un chantier", en: "Mini excavator on a job site" },
-    imageKey: null,
+    imageKey: "/prestigelocations/categories/cat-machinerie.jpg",
     position: 0,
   },
   {
@@ -79,7 +86,7 @@ export const catalogCategories: CatalogCategory[] = [
       fr: "Remorques dompeur, fermée et plateforme",
       en: "Dump, enclosed and flatbed trailers",
     },
-    imageKey: null,
+    imageKey: "/prestigelocations/categories/cat-remorques.jpg",
     position: 1,
   },
   {
@@ -98,7 +105,7 @@ export const catalogCategories: CatalogCategory[] = [
       fr: "Compacteur, scie à béton et marteau-piqueur",
       en: "Compactor, concrete saw and jackhammer",
     },
-    imageKey: null,
+    imageKey: "/prestigelocations/categories/cat-petits-equipements.jpg",
     position: 2,
   },
 ];
@@ -107,6 +114,7 @@ export const catalogEquipments: CatalogEquipment[] = [
   // — Machinerie
   {
     slug: "mini-pelle",
+    code: "MP-01",
     category: "machinerie",
     name: { fr: "Mini-pelle", en: "Mini excavator" },
     detail: { fr: "Mini-pelle (excavatrice compacte)", en: "Mini excavator (compact excavator)" },
@@ -118,6 +126,7 @@ export const catalogEquipments: CatalogEquipment[] = [
   },
   {
     slug: "tracteur-compact",
+    code: "TC-01",
     category: "machinerie",
     name: { fr: "Tracteur compact", en: "Compact tractor" },
     detail: {
@@ -132,6 +141,7 @@ export const catalogEquipments: CatalogEquipment[] = [
   },
   {
     slug: "plateforme-elevatrice",
+    code: "PE-01",
     category: "machinerie",
     name: { fr: "Plateforme élévatrice", en: "Aerial lift" },
     status: "bientot",
@@ -142,6 +152,7 @@ export const catalogEquipments: CatalogEquipment[] = [
   },
   {
     slug: "godets-accessoires",
+    code: "GA-01",
     category: "machinerie",
     name: { fr: "Godets et accessoires variés", en: "Buckets and various attachments" },
     status: "disponible",
@@ -153,6 +164,7 @@ export const catalogEquipments: CatalogEquipment[] = [
   // — Remorques
   {
     slug: "trailer-dompeur",
+    code: "TD-01",
     category: "remorques",
     name: { fr: "Trailer dompeur", en: "Dump trailer" },
     detail: {
@@ -167,6 +179,7 @@ export const catalogEquipments: CatalogEquipment[] = [
   },
   {
     slug: "trailer-ferme",
+    code: "TF-01",
     category: "remorques",
     name: { fr: "Trailer fermé", en: "Enclosed trailer" },
     detail: {
@@ -181,6 +194,7 @@ export const catalogEquipments: CatalogEquipment[] = [
   },
   {
     slug: "trailer-plateforme",
+    code: "TP-01",
     category: "remorques",
     name: { fr: "Trailer plateforme", en: "Flatbed trailer" },
     detail: {
@@ -195,6 +209,7 @@ export const catalogEquipments: CatalogEquipment[] = [
   },
   {
     slug: "attaches-remorquage",
+    code: "AR-01",
     category: "remorques",
     name: { fr: "Attaches et accessoires de remorquage", en: "Hitches and towing accessories" },
     status: "disponible",
@@ -206,6 +221,7 @@ export const catalogEquipments: CatalogEquipment[] = [
   // — Petits équipements
   {
     slug: "compacteur",
+    code: "CP-01",
     category: "petits-equipements",
     name: { fr: "Compacteurs", en: "Plate compactors" },
     detail: { fr: "Compacteurs à plaque vibrante", en: "Vibrating plate compactors" },
@@ -218,6 +234,7 @@ export const catalogEquipments: CatalogEquipment[] = [
   },
   {
     slug: "scie-a-beton",
+    code: "SB-01",
     category: "petits-equipements",
     name: { fr: "Scies à béton", en: "Concrete saws" },
     formLabel: { fr: "Scie à béton", en: "Concrete saw" },
@@ -229,6 +246,7 @@ export const catalogEquipments: CatalogEquipment[] = [
   },
   {
     slug: "marteau-piqueur",
+    code: "MA-01",
     category: "petits-equipements",
     name: { fr: "Marteaux-piqueurs", en: "Jackhammers" },
     formLabel: { fr: "Marteau-piqueur", en: "Jackhammer" },
@@ -240,6 +258,7 @@ export const catalogEquipments: CatalogEquipment[] = [
   },
   {
     slug: "outillage-specialise",
+    code: "OS-01",
     category: "petits-equipements",
     name: { fr: "Outillage spécialisé", en: "Specialized tools" },
     status: "sur_demande",
@@ -249,8 +268,3 @@ export const catalogEquipments: CatalogEquipment[] = [
     position: 3,
   },
 ];
-
-export const staticCatalog: CatalogData = {
-  categories: catalogCategories,
-  equipments: catalogEquipments,
-};

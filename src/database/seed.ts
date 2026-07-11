@@ -1,5 +1,5 @@
 // Seed idempotent : catégories + équipements (upsert par slug, textes mis à jour,
-// champs gérés par l'admin préservés) + création du superadmin initial.
+// champs gérés par l'admin préservés) + création de l'admin initial.
 import { eq, sql } from "drizzle-orm";
 import { createDb, hashPassword, categories, equipments, users } from "./index.js";
 import {
@@ -63,6 +63,7 @@ async function main() {
       .insert(equipments)
       .values({
         slug: e.slug,
+        code: e.code ?? null,
         categoryId: cat.id,
         nameFr: e.name.fr,
         nameEn: e.name.en,
@@ -91,7 +92,7 @@ async function main() {
       });
   }
 
-  // Superadmin initial — jamais écrasé s'il existe.
+  // Admin initial — jamais écrasé s'il existe.
   const adminEmail = (process.env.ADMIN_EMAIL ?? "admin@prestige.local").toLowerCase();
   const adminName = process.env.ADMIN_NAME ?? "Administrateur";
   const adminPassword = process.env.ADMIN_PASSWORD ?? "prestige-dev";
@@ -104,11 +105,11 @@ async function main() {
       email: adminEmail,
       name: adminName,
       passwordHash: hashPassword(adminPassword),
-      role: "superadmin",
+      role: "admin",
     })
     .onConflictDoNothing({ target: users.email });
 
-  console.log("Seed terminé : 3 catégories, 12 équipements, superadmin", adminEmail);
+  console.log("Seed terminé : 3 catégories, 12 équipements, admin", adminEmail);
   process.exit(0);
 }
 

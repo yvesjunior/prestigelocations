@@ -1,36 +1,126 @@
+import { useSearch } from "@tanstack/react-router";
 import { Mail, MapPin, Phone } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { DateRange } from "react-day-picker";
+import { Calendar } from "@/components/ui/calendar";
 import { SectionTitle } from "@/components/site/SectionTitle";
 import { useLang, useT } from "@/lib/i18n";
+import { withCode } from "@/lib/catalog";
 import { useCatalog } from "@/lib/useCatalog";
-import { EMAIL, PHONE_DISPLAY, PHONE_HREF } from "@/lib/site";
+import { phoneHref } from "@/lib/contact";
+import { useContact } from "@/lib/useContact";
+import { getUnavailableRangesFn, submitReservationRequestFn } from "@/server/public";
+
+const inputCls =
+  "w-full rounded-md border border-input bg-background px-3.5 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary";
+const labelCls = "mb-1.5 block text-xs font-semibold tracking-wide uppercase";
+
+/** "AAAA-MM-JJ" ↔ Date locale (jamais UTC : les journées sont locales). */
+function toIso(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`;
+}
+function fromIso(s: string): Date {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
 
 export function ContactPage() {
   const lang = useLang();
   const t = useT();
+  const contact = useContact();
   const { equipments } = useCatalog();
-  const [sent, setSent] = useState(false);
 
-  const equipmentOptions = [
-    ...equipments
-      .filter((e) => e.featured && e.status === "disponible")
-      .map((e) => (e.formLabel ?? e.name)[lang]),
-    t.contactPage.otherOption,
+  // Tous les équipements publiés (la BD est la source de vérité) — les statuts
+  // « bientôt » / « sur demande » se demandent aussi.
+  const options = equipments;
+  const search = useSearch({ strict: false }) as { equipement?: string };
+  const preselected =
+    search.equipement && options.some((e) => e.slug === search.equipement) ? search.equipement : "";
+
+  const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [slug, setSlug] = useState<string>(preselected); // "" = Autre / plusieurs équipements
+  const [message, setMessage] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot — reste vide chez un humain
+  const [range, setRange] = useState<DateRange | undefined>();
+  const [unavailable, setUnavailable] = useState<{ start: string; end: string }[]>([]);
+
+  // Périodes réservées de l'équipement choisi (grisées dans le calendrier).
+  useEffect(() => {
+    setRange(undefined);
+    if (!slug) {
+      setUnavailable([]);
+      return;
+    }
+    let stale = false;
+    getUnavailableRangesFn({ data: { slug } })
+      .then((ranges) => {
+        if (!stale) setUnavailable(ranges);
+      })
+      .catch(() => setUnavailable([]));
+    return () => {
+      stale = true;
+    };
+  }, [slug]);
+
+  const disabledDays = [
+    { before: new Date() },
+    ...unavailable.map((r) => ({ from: fromIso(r.start), to: fromIso(r.end) })),
   ];
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    // Équipement précis → la période est obligatoire (le serveur revérifie).
+    if (slug && !range?.from) {
+      setError(t.contactPage.errors.dates_required);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await submitReservationRequestFn({
+        data: {
+          name,
+          phone,
+          equipmentSlug: slug || null,
+          startDate: range?.from ? toIso(range.from) : null,
+          endDate: range?.to ? toIso(range.to) : range?.from ? toIso(range.from) : null,
+          message: message.trim() || null,
+          lang,
+          website,
+        },
+      });
+      if (!result.ok) {
+        const key = result.error ?? "generic";
+        setError(t.contactPage.errors[key].replace("{phone}", contact.phone));
+        return;
+      }
+      setSent(true);
+    } catch {
+      setError(t.contactPage.errors.generic.replace("{phone}", contact.phone));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   const infos = [
     {
       icon: Phone,
       label: t.contactPage.infos.phoneLabel,
-      value: PHONE_DISPLAY,
-      href: PHONE_HREF,
+      value: contact.phone,
+      href: phoneHref(contact.phone),
       note: t.contactPage.infos.phoneNote,
     },
     {
       icon: Mail,
       label: t.contactPage.infos.emailLabel,
-      value: EMAIL,
-      href: `mailto:${EMAIL}`,
+      value: contact.email,
+      href: `mailto:${contact.email}`,
       note: t.contactPage.infos.emailNote,
     },
     {
@@ -40,19 +130,6 @@ export function ContactPage() {
       note: t.contactPage.infos.regionNote,
     },
   ];
-
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    const subject = encodeURIComponent(
-      `${t.contactPage.mailSubject} — ${data.get("equipement") || t.contactPage.mailFallbackEquipment}`,
-    );
-    const body = encodeURIComponent(
-      `${t.contactPage.mailBody.name} : ${data.get("nom")}\n${t.contactPage.mailBody.phone} : ${data.get("telephone")}\n${t.contactPage.mailBody.equipment} : ${data.get("equipement")}\n\n${t.contactPage.mailBody.message} :\n${data.get("message")}`,
-    );
-    window.location.href = `mailto:${EMAIL}?subject=${subject}&body=${body}`;
-    setSent(true);
-  }
 
   return (
     <>
@@ -103,77 +180,137 @@ export function ContactPage() {
           {sent ? (
             <div className="mt-8 rounded-lg border border-primary/40 bg-secondary p-6 text-center">
               <p className="font-semibold text-primary">{t.contactPage.sentTitle}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{t.contactPage.sentText}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t.contactPage.sentText.replace("{phone}", contact.phone)}
+              </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="mt-7 space-y-5">
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
-                  <label
-                    htmlFor="nom"
-                    className="mb-1.5 block text-xs font-semibold tracking-wide uppercase"
-                  >
+                  <label htmlFor="nom" className={labelCls}>
                     {t.contactPage.nameLabel}
                   </label>
                   <input
                     id="nom"
-                    name="nom"
                     required
-                    className="w-full rounded-md border border-input bg-background px-3.5 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className={inputCls}
                     placeholder={t.contactPage.namePlaceholder}
                   />
                 </div>
                 <div>
-                  <label
-                    htmlFor="telephone"
-                    className="mb-1.5 block text-xs font-semibold tracking-wide uppercase"
-                  >
+                  <label htmlFor="telephone" className={labelCls}>
                     {t.contactPage.phoneLabel}
                   </label>
                   <input
                     id="telephone"
-                    name="telephone"
                     type="tel"
                     required
-                    className="w-full rounded-md border border-input bg-background px-3.5 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    minLength={7}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className={inputCls}
                     placeholder={t.contactPage.phonePlaceholder}
                   />
                 </div>
               </div>
+
               <div>
-                <label
-                  htmlFor="equipement"
-                  className="mb-1.5 block text-xs font-semibold tracking-wide uppercase"
-                >
+                <label htmlFor="equipement" className={labelCls}>
                   {t.contactPage.equipmentLabel}
                 </label>
                 <select
                   id="equipement"
-                  name="equipement"
-                  className="w-full rounded-md border border-input bg-background px-3.5 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  className={inputCls}
                 >
-                  {equipmentOptions.map((option) => (
-                    <option key={option}>{option}</option>
+                  {/* « Autre » en tête : c'est la valeur par défaut (pas de calendrier). */}
+                  <option value="">{t.contactPage.otherOption}</option>
+                  {options.map((e) => (
+                    <option key={e.slug} value={e.slug}>
+                      {withCode((e.formLabel ?? e.name)[lang], e.code)}
+                    </option>
                   ))}
                 </select>
               </div>
+
+              {slug && (
+                <div>
+                  <p className={labelCls}>{t.contactPage.datesLabel}</p>
+                  <div className="rounded-md border border-input">
+                    {/* Calendrier pleine largeur : occupe la même largeur que les
+                        autres champs du formulaire (cellules dimensionnées par la
+                        grille, pas par --cell-size fixe). */}
+                    <Calendar
+                      mode="range"
+                      selected={range}
+                      onSelect={setRange}
+                      disabled={disabledDays}
+                      excludeDisabled
+                      numberOfMonths={1}
+                      className="w-full [--cell-size:2.6rem]"
+                      classNames={{
+                        root: "w-full",
+                        months: "w-full",
+                        month: "flex w-full flex-col gap-4",
+                      }}
+                    />
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <span>{t.contactPage.datesHint}</span>
+                    {range?.from && (
+                      <span className="flex items-center gap-2">
+                        <span className="text-primary">
+                          {t.contactPage.datesSelected
+                            .replace("{start}", toIso(range.from))
+                            .replace("{end}", toIso(range.to ?? range.from))}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setRange(undefined)}
+                          className="underline hover:text-primary"
+                        >
+                          {t.contactPage.datesClear}
+                        </button>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div>
-                <label
-                  htmlFor="message"
-                  className="mb-1.5 block text-xs font-semibold tracking-wide uppercase"
-                >
+                <label htmlFor="message" className={labelCls}>
                   {t.contactPage.messageLabel}
                 </label>
                 <textarea
                   id="message"
-                  name="message"
                   rows={4}
-                  className="w-full rounded-md border border-input bg-background px-3.5 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className={inputCls}
                   placeholder={t.contactPage.messagePlaceholder}
                 />
               </div>
-              <button type="submit" className="btn-gold w-full">
-                {t.contactPage.submit}
+
+              {/* Honeypot anti-spam : invisible pour les humains. */}
+              <input
+                type="text"
+                name="website"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                autoComplete="off"
+                tabIndex={-1}
+                aria-hidden="true"
+                className="hidden"
+              />
+
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <p className="text-xs text-muted-foreground">{t.contactPage.notBookingNote}</p>
+              <button type="submit" disabled={busy} className="btn-gold w-full disabled:opacity-60">
+                {busy ? "…" : t.contactPage.submit}
               </button>
             </form>
           )}

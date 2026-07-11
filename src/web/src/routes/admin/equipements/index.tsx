@@ -37,6 +37,7 @@ function EquipmentListPage() {
           <thead>
             <tr className="border-b border-border/60 bg-card text-left text-xs tracking-wider text-primary uppercase">
               <th className="px-4 py-3">Nom (FR)</th>
+              <th className="px-4 py-3">Code</th>
               <th className="px-4 py-3">Catégorie</th>
               <th className="px-4 py-3">Statut</th>
               <th className="px-4 py-3">Accueil</th>
@@ -49,6 +50,7 @@ function EquipmentListPage() {
             {equipments.map((e) => (
               <tr key={e.id} className="border-b border-border/40 last:border-0 hover:bg-card/60">
                 <td className="px-4 py-3 font-medium">{e.nameFr}</td>
+                <td className="px-4 py-3 text-muted-foreground">{e.code ?? "—"}</td>
                 <td className="px-4 py-3 text-muted-foreground">{e.categoryName}</td>
                 <td className="px-4 py-3">
                   <span

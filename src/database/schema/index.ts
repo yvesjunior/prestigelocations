@@ -17,7 +17,10 @@ export const equipmentStatus = pgEnum("equipment_status", [
   "sur_demande",
 ]);
 
-export const userRole = pgEnum("user_role", ["superadmin", "admin", "accountant"]);
+// `admin` = plein accès (catalogue, pages, paramètres, comptes employés) ;
+// `accountant` = lecture seule (rapports). L'ancien rôle `superadmin` a été
+// fusionné dans `admin` (migration 0001).
+export const userRole = pgEnum("user_role", ["admin", "accountant"]);
 
 export const requestStatus = pgEnum("request_status", [
   "nouvelle",
@@ -58,6 +61,9 @@ export const equipments = pgTable(
   {
     id: serial("id").primaryKey(),
     slug: text("slug").notNull().unique(),
+    // Code court optionnel (ex. « MP-01 ») pour distinguer deux unités portant
+    // le même nom — affiché partout où le nom seul serait ambigu.
+    code: text("code").unique(),
     categoryId: integer("category_id")
       .notNull()
       .references(() => categories.id, { onDelete: "restrict" }),
@@ -155,3 +161,50 @@ export const settings = pgTable("settings", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   updatedBy: integer("updated_by").references(() => users.id, { onDelete: "set null" }),
 });
+
+// Clients de la plateforme — créés par les employés pour compléter une commande.
+// Pas de connexion client pour l'instant (aucune colonne d'auth) ; si l'option
+// s'active un jour, une migration ajoutera password_hash/active sans rien casser.
+export const customers = pgTable("customers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  phone: text("phone").notNull(),
+  email: text("email"),
+  note: text("note"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const orderStatus = pgEnum("order_status", ["confirmee", "annulee"]);
+
+// Commandes — une location confirmée : client + équipement + période (jours
+// inclusifs). Une commande `confirmee` rend l'équipement indisponible sur sa
+// période ; `annulee` libère les dates. La fin passée = commande terminée
+// (dérivé de end_date, jamais stocké).
+export const orders = pgTable(
+  "orders",
+  {
+    id: serial("id").primaryKey(),
+    customerId: integer("customer_id")
+      .notNull()
+      .references(() => customers.id, { onDelete: "restrict" }),
+    equipmentId: integer("equipment_id")
+      .notNull()
+      .references(() => equipments.id, { onDelete: "restrict" }),
+    startDate: date("start_date").notNull(),
+    endDate: date("end_date").notNull(),
+    status: orderStatus("status").notNull().default("confirmee"),
+    note: text("note"),
+    // Renseigné quand la commande naît de la validation d'une demande publique.
+    requestId: integer("request_id").references(() => reservationRequests.id, {
+      onDelete: "set null",
+    }),
+    createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("orders_equipment_idx").on(t.equipmentId, t.startDate, t.endDate),
+    index("orders_customer_idx").on(t.customerId),
+  ],
+);

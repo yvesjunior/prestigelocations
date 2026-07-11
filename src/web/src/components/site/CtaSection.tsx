@@ -3,11 +3,13 @@ import { Phone } from "lucide-react";
 import ctaTrailer from "@/assets/cta-trailer.jpg";
 import logo from "@/assets/logo.png";
 import { pagePaths, useLang, useT } from "@/lib/i18n";
-import { PHONE_DISPLAY, PHONE_HREF } from "@/lib/site";
+import { phoneHref } from "@/lib/contact";
+import { useContact } from "@/lib/useContact";
 
 export function CtaSection() {
   const lang = useLang();
   const t = useT();
+  const contact = useContact();
 
   return (
     <section className="relative overflow-hidden">
@@ -34,12 +36,12 @@ export function CtaSection() {
         </div>
 
         <div className="flex flex-col items-start gap-5">
-          <a href={PHONE_HREF} className="group flex items-center gap-3">
+          <a href={phoneHref(contact.phone)} className="group flex items-center gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-full border border-primary text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
               <Phone className="h-5 w-5" />
             </span>
             <span>
-              <span className="block text-xl font-bold text-foreground">{PHONE_DISPLAY}</span>
+              <span className="block text-xl font-bold text-foreground">{contact.phone}</span>
               <span className="block text-xs text-muted-foreground">{t.ctaSection.phoneNote}</span>
             </span>
           </a>

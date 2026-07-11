@@ -1,11 +1,15 @@
 import { useLoaderData } from "@tanstack/react-router";
-import { staticCatalog, type CatalogData } from "./catalog";
+import type { CatalogData } from "./catalog";
 
 /**
- * Catalogue fourni par le loader de la route courante (BD via getCatalogFn),
- * avec repli sur le catalogue statique (route sans loader, BD indisponible).
+ * Catalogue fourni par le loader de la route courante (BD via getCatalogFn).
+ * Aucun repli statique : si la BD est indisponible, le loader échoue et le
+ * site affiche la page de maintenance.
  */
 export function useCatalog(): CatalogData {
   const data = useLoaderData({ strict: false }) as { catalog?: CatalogData } | undefined;
-  return data?.catalog ?? staticCatalog;
+  if (!data?.catalog) {
+    throw new Error("useCatalog : la route ne fournit pas `catalog` dans son loader.");
+  }
+  return data.catalog;
 }

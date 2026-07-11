@@ -15,6 +15,10 @@ COPY src ./src
 # The nitro preset (node-server) is set in vite.config.ts.
 ARG VITE_BASE_URL=
 ENV VITE_BASE_URL=$VITE_BASE_URL
+ARG VITE_THEME_TWEAKER=
+ENV VITE_THEME_TWEAKER=$VITE_THEME_TWEAKER
+ARG VITE_IMAGEKIT_URL_ENDPOINT=
+ENV VITE_IMAGEKIT_URL_ENDPOINT=$VITE_IMAGEKIT_URL_ENDPOINT
 RUN npm run build -w @prestige/web
 
 # ---- run stage ----
