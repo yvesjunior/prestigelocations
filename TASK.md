@@ -30,16 +30,21 @@
 
 > **Reprendre ici.** Mettre à jour ce bloc à chaque session (2 lignes max).
 
-- **Travail de la session 2026-07-11 commité** : `4a8f80c` sur `develop` (rôles simplifiés,
+- **▶ PROCHAINE TÂCHE : 4B.5 — Rapports** (`/admin/rapports`) : volume des demandes par
+  période, répartition par équipement et par catégorie, export CSV ; accessible en lecture
+  au rôle `accountant`. Source = `reservation_requests` (+ `orders` pour les locations
+  confirmées). Puis **4B.4** (vue calendrier admin mensuelle dérivée des `orders` +
+  « bloquer ces dates » depuis une demande) → Phase 4 close. Ce sont les 2 derniers blocs de
+  code pur, sans dépendance 🧍.
+- **Session 2026-07-11 commitée sur `develop`** : `4a8f80c` (gros lot : rôles simplifiés,
   CRUD catégories + photos, ImageKit, page maintenance, téléphone 100 % BD,
-  `customers`+`orders`, pages publiques de catégories, demandes 4B.3 + calendrier public +
-  courriel, code équipement ; migrations `0001`→`0004`). **⚠️ Pas encore poussé** — le push
-  attend 🧍 les droits GitHub pour `yvesbat` (invitation collaborateur sur
-  `Axelle03/Projet-Prestige_Locations` ou bascule de compte). `image.png` (maquette) laissé
-  non suivi. **Après un checkout neuf : `npm run db:setup`** (migrations + seed pas encore
-  automatisés au boot du conteneur — dette Phase 5).
-- **En cours** : Phase 4 — il reste **4B.4** (vue calendrier admin mensuelle, dérivée des
-  commandes) et **4B.5** (rapports + export CSV). 4B.1/4B.2/4B.3/4B.6 faits.
+  `customers`+`orders`, pages publiques de catégories, demandes 4B.3, code équipement ;
+  migrations `0001`→`0004`) puis `5499baa` (fix calendrier contact). **⚠️ Pas encore
+  poussé** — attend 🧍 les droits GitHub pour `yvesbat`. `image.png` (maquette) non suivi.
+  **Après un checkout neuf : `npm run db:setup`** (migrations + seed pas auto au boot —
+  dette Phase 5).
+- **État Phase 4** : 4B.1 (auth) · 4B.2 (catalogue) · 4B.3 (demandes) · 4B.6 (thème) **faits
+  et vérifiés** ; restent 4B.4 et 4B.5.
 - **🧍 En attente client** : compte SMTP (courriels de demandes), domaine (Phase 5),
   validation contenu/photos réelles (Phase 6).
 
@@ -729,8 +734,9 @@ depuis la BD ; `docker compose down -v && up` re-seed proprement)*
 **4B.2 — Catalogue dans l'admin** *(fait quand : ajout d'un équipement avec photo visible
 côté public sans redéploiement)*
 
-- [ ] Tableau de bord `/admin` (compteurs simples).
-- [ ] Équipements : liste + formulaire (FR+EN, statut, featured, publié, ordre).
+- [x] Tableau de bord `/admin` (compteurs : demandes nouvelles, locations en cours,
+      équipements publiés, employés actifs).
+- [x] Équipements : liste + formulaire (FR+EN, code, statut, featured, publié, ordre, photo).
 - [x] Catégories : création (slug auto), renommage FR/EN, ordre, suppression si vide
       (erreur claire sinon) ; toutes les catégories BD affichées sur le site public.
 - [x] Upload photo signé → ImageKit (`getImageKitSignature`), aperçu, remplacement
@@ -780,8 +786,9 @@ grise immédiatement dans le formulaire public)*
       `equipment_unavailabilities` reste disponible pour des blocages manuels
       (maintenance) si le besoin se confirme.
 - [ ] Action « bloquer ces dates » depuis une demande (pré-remplie, `request_id`).
-- [ ] `AvailabilityPicker` public (jours grisés via `getUnavailableDates`) + revalidation
-      serveur du chevauchement + mention « pas une réservation confirmée ».
+- [x] `AvailabilityPicker` public (jours grisés via `getUnavailableRangesFn`) + revalidation
+      serveur du chevauchement + mention « pas une réservation confirmée » — **livré avec
+      4B.3** (calendrier du formulaire de contact).
 
 **4B.5 — Rapports** *(fait quand : compteurs cohérents avec les demandes en BD + CSV
 téléchargeable ; accessible au rôle `accountant`)*
