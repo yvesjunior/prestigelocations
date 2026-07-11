@@ -754,6 +754,13 @@ côté public sans redéploiement)*
       affiché d'emblée (`validateSearch` sur les routes contact). Calendrier **pleine
       largeur** (occupe la largeur du champ ; `classNames={{root/months/month:"w-full"}}`
       + `--cell-size:2.6rem` — le composant shadcn `ui/calendar` est `w-fit` par défaut).
+      **Localisé FR/EN** (`locale` de `react-day-picker/locale`). Un seul mois affiché,
+      navigation mois par mois via les flèches ‹ ›. ⚠️ **Bug corrigé (2026-07-11)** : les
+      flèches (nav en position absolue) fuyaient dans le coin haut-gauche de la page (donc
+      injoignables → semblait bloqué au mois courant) parce que l'override `classNames`
+      avait retiré le `relative` du composant. Correctif : `classNames.root: "relative
+      w-full"` + `buttonVariant="outline"` (flèches bordées visibles). Vérifié par clic
+      souris réel : juillet → août, sélection de dates futures OK.
 - [x] **Courriel de notification à l'administrateur** (nouveauté demandée le 2026-07-11,
       remplace la décision « pas de courriel sortant ») : nodemailer + variables `SMTP_*`
       (`.env.example`), destinataire = courriel des Coordonnées (BD), **best-effort** —

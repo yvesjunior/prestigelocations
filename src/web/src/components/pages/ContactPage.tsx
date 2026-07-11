@@ -2,6 +2,7 @@ import { useSearch } from "@tanstack/react-router";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { DateRange } from "react-day-picker";
+import { enUS, fr } from "react-day-picker/locale";
 import { Calendar } from "@/components/ui/calendar";
 import { SectionTitle } from "@/components/site/SectionTitle";
 import { useLang, useT } from "@/lib/i18n";
@@ -240,10 +241,11 @@ export function ContactPage() {
               {slug && (
                 <div>
                   <p className={labelCls}>{t.contactPage.datesLabel}</p>
-                  <div className="rounded-md border border-input">
-                    {/* Calendrier pleine largeur : occupe la même largeur que les
-                        autres champs du formulaire (cellules dimensionnées par la
-                        grille, pas par --cell-size fixe). */}
+                  <div className="rounded-md border border-input p-1">
+                    {/* Un mois à la fois, navigation par les flèches ‹ ›.
+                        ⚠️ `relative` sur root est requis : la nav (flèches) est en
+                        position absolue et s'y ancre — sans ça elle fuyait en haut
+                        de la page, hors de portée du clic. */}
                     <Calendar
                       mode="range"
                       selected={range}
@@ -251,9 +253,11 @@ export function ContactPage() {
                       disabled={disabledDays}
                       excludeDisabled
                       numberOfMonths={1}
+                      locale={lang === "fr" ? fr : enUS}
+                      buttonVariant="outline"
                       className="w-full [--cell-size:2.6rem]"
                       classNames={{
-                        root: "w-full",
+                        root: "relative w-full",
                         months: "w-full",
                         month: "flex w-full flex-col gap-4",
                       }}
