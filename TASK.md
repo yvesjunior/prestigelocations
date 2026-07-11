@@ -30,12 +30,12 @@
 
 > **Reprendre ici.** Mettre à jour ce bloc à chaque session (2 lignes max).
 
-- **▶ PROCHAINE TÂCHE : 4B.4 — Vue calendrier admin** (`/admin/calendrier`, dernier bloc de
-  Phase 4) : vue mensuelle par équipement des périodes réservées (dérivée des `orders`
-  confirmés) + action « bloquer ces dates » depuis une demande (crée une commande). Le
-  composant `ui/calendar` existe déjà ; s'inspirer du calendrier public de `ContactPage`
-  (⚠️ `classNames.root: "relative"` obligatoire). Après 4B.4 → Phase 4 close, passer à la
-  Phase 5 (hébergement, 🧍 domaine + accès serveur).
+- **▶ PHASE 4 TERMINÉE (2026-07-11)** — 4B.1→4B.6 tous faits et vérifiés en Docker.
+  **PROCHAINE ÉTAPE : Phase 5 — Hébergement** : scripts `scripts/*.sh`,
+  `docker-compose.prod.yml` + `Caddyfile` (TLS Let's Encrypt), `infra/README.md`, et régler
+  la dette « migrations + seed automatiques au démarrage du conteneur ». **Bloquée 🧍** :
+  domaine (avec le client) + accès SSH au serveur. Faisable sans blocage : écrire les
+  scripts et le compose prod « à blanc » en attendant les infos serveur.
 - **Session 2026-07-11 commitée sur `develop`** : `4a8f80c` (gros lot : rôles simplifiés,
   CRUD catégories + photos, ImageKit, page maintenance, téléphone 100 % BD,
   `customers`+`orders`, pages publiques de catégories, demandes 4B.3, code équipement ;
@@ -43,8 +43,8 @@
   poussé** — attend 🧍 les droits GitHub pour `yvesbat`. `image.png` (maquette) non suivi.
   **Après un checkout neuf : `npm run db:setup`** (migrations + seed pas auto au boot —
   dette Phase 5).
-- **État Phase 4** : 4B.1 (auth) · 4B.2 (catalogue) · 4B.3 (demandes) · 4B.6 (thème) **faits
-  et vérifiés** ; restent 4B.4 et 4B.5.
+- **État Phase 4** : **close** — 4B.1 (auth) · 4B.2 (catalogue) · 4B.3 (demandes) ·
+  4B.4 (calendrier) · 4B.5 (rapports) · 4B.6 (thème) tous faits et vérifiés en Docker.
 - **🧍 En attente client** : compte SMTP (courriels de demandes), domaine (Phase 5),
   validation contenu/photos réelles (Phase 6).
 
@@ -781,11 +781,14 @@ côté public sans redéploiement)*
 **4B.4 — Calendrier de disponibilités** *(fait quand : bloquer des dates dans l'admin les
 grise immédiatement dans le formulaire public)*
 
-- [ ] `/admin/calendrier` : vue mensuelle des périodes réservées par équipement — les
-      indisponibilités sont désormais **dérivées des commandes** (`orders`) ; la table
-      `equipment_unavailabilities` reste disponible pour des blocages manuels
-      (maintenance) si le besoin se confirme.
-- [ ] Action « bloquer ces dates » depuis une demande (pré-remplie, `request_id`).
+- [x] `/admin/calendrier` (2026-07-11) : sélecteur d'équipement + vue mensuelle (navigation
+      par flèches) surlignant les périodes réservées, **dérivées des commandes confirmées**
+      (`orders`), avec la liste des commandes (client, dates, statut) à côté. Réutilise
+      `ui/calendar` (modifiers `booked`, `classNames.root: "relative"`). La table
+      `equipment_unavailabilities` reste dispo pour des blocages manuels (maintenance) si
+      besoin. Vérifié en Docker.
+- [x] Action « bloquer ces dates » depuis une demande — **couverte par « Valider → commande »**
+      de `/admin/demandes` (crée la commande liée `request_id`, ce qui bloque les dates).
 - [x] `AvailabilityPicker` public (jours grisés via `getUnavailableRangesFn`) + revalidation
       serveur du chevauchement + mention « pas une réservation confirmée » — **livré avec
       4B.3** (calendrier du formulaire de contact).
