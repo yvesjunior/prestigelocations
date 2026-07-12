@@ -6,6 +6,7 @@ import type { ThemeConfig } from "@/lib/theme";
 import { themeConfigSchema } from "@/lib/theme";
 import { contactInfoSchema, type ContactInfo } from "@/lib/contact";
 import { contentOverridesSchema, type ContentOverrides } from "@/lib/content";
+import { brandingSchema, type Branding } from "@/lib/branding";
 
 // ---------------------------------------------------------------- types
 
@@ -371,3 +372,13 @@ export const getPageContentForAdminFn = createServerFn({ method: "GET" }).handle
 export const updatePageContentFn = createServerFn({ method: "POST" })
   .validator(contentOverridesSchema)
   .handler(async ({ data }) => (await import("./impl/admin")).updatePageContent(data));
+
+// ---------------------------------------------------------------- logo / marque
+
+export const getBrandingForAdminFn = createServerFn({ method: "GET" }).handler(
+  async (): Promise<Branding> => (await import("./impl/admin")).getBrandingForAdmin(),
+);
+
+export const updateBrandingFn = createServerFn({ method: "POST" })
+  .validator(brandingSchema)
+  .handler(async ({ data }) => (await import("./impl/admin")).updateBranding(data));

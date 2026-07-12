@@ -14,7 +14,8 @@ import appCss from "../styles.css?url";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { ThemeTweaker } from "@/components/dev/ThemeTweaker";
-import { getContactFn, getPageContentFn, getThemeFn } from "@/server/public";
+import { getBrandingFn, getContactFn, getPageContentFn, getThemeFn } from "@/server/public";
+import { imageUrl } from "@/lib/images";
 import { DEFAULT_CONTACT } from "@/lib/contact";
 import { themeToCss } from "@/lib/theme";
 import { pagePaths, useLang, useT } from "@/lib/i18n";
@@ -103,49 +104,55 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   // Thème + coordonnées (BD, cache 60 s) — l'admin est la source de vérité.
   loader: async () => {
-    const [theme, contact, content] = await Promise.all([
+    const [theme, contact, content, branding] = await Promise.all([
       getThemeFn(),
       getContactFn(),
       getPageContentFn(),
+      getBrandingFn(),
     ]);
-    return { theme, contact, content };
+    return { theme, contact, content, branding };
   },
-  head: ({ loaderData }) => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Prestige Locations | Location d'équipements à Sherbrooke" },
-      {
-        name: "description",
-        // Téléphone depuis la BD (repli sur le défaut si le loader a échoué).
-        content: `Location d'équipements fiables à Sherbrooke : mini-pelle, remorques, compacteurs et plus. Simple, rapide et sans tracas. ${loaderData?.contact.phone ?? DEFAULT_CONTACT.phone}.`,
-      },
-      { name: "author", content: "Prestige Locations" },
-      {
-        property: "og:title",
-        content: "Prestige Locations | Location d'équipements à Sherbrooke",
-      },
-      {
-        property: "og:description",
-        content:
-          "Le bon équipement, au bon moment. Machinerie, remorques et petits équipements en location à la journée, semaine ou mois.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/logo-icon.png", type: "image/png" },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      { rel: "apple-touch-icon", href: "/logo-icon.png" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap",
-      },
-    ],
-  }),
+  head: ({ loaderData }) => {
+    // Favicon : logo téléversé (ImageKit) si présent, sinon l'icône bundlée.
+    const faviconHref =
+      imageUrl(loaderData?.branding?.logoKey, { w: 128, h: 128 }) ?? "/logo-icon.png";
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        { title: "Prestige Locations | Location d'équipements à Sherbrooke" },
+        {
+          name: "description",
+          // Téléphone depuis la BD (repli sur le défaut si le loader a échoué).
+          content: `Location d'équipements fiables à Sherbrooke : mini-pelle, remorques, compacteurs et plus. Simple, rapide et sans tracas. ${loaderData?.contact.phone ?? DEFAULT_CONTACT.phone}.`,
+        },
+        { name: "author", content: "Prestige Locations" },
+        {
+          property: "og:title",
+          content: "Prestige Locations | Location d'équipements à Sherbrooke",
+        },
+        {
+          property: "og:description",
+          content:
+            "Le bon équipement, au bon moment. Machinerie, remorques et petits équipements en location à la journée, semaine ou mois.",
+        },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
+      links: [
+        { rel: "stylesheet", href: appCss },
+        { rel: "icon", href: faviconHref, type: "image/png" },
+        { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+        { rel: "apple-touch-icon", href: faviconHref },
+        { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+        {
+          rel: "stylesheet",
+          href: "https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap",
+        },
+      ],
+    };
+  },
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

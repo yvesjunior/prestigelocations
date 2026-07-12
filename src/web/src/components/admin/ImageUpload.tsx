@@ -17,7 +17,7 @@ export function ImageUpload({
   onChange,
 }: {
   imageKey: string | null;
-  folder: "categories" | "equipements";
+  folder: "categories" | "equipements" | "branding";
   alt: string;
   onChange: (key: string | null) => void;
 }) {

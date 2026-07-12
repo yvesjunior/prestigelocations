@@ -1,18 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { ThemeSettings } from "@/components/admin/ThemeSettings";
-import { getThemeForAdminFn } from "@/server/admin";
+import { BrandingSettings } from "@/components/admin/BrandingSettings";
+import { getBrandingForAdminFn, getThemeForAdminFn } from "@/server/admin";
 
 export const Route = createFileRoute("/admin/parametres")({
   head: () => ({ meta: [{ title: "Paramètres | Administration" }] }),
-  loader: async () => ({ theme: await getThemeForAdminFn() }),
+  loader: async () => ({
+    theme: await getThemeForAdminFn(),
+    branding: await getBrandingForAdminFn(),
+  }),
   component: SettingsPage,
 });
 
-const TABS = [{ key: "apparence", label: "Apparence" }] as const;
+const TABS = [
+  { key: "apparence", label: "Apparence" },
+  { key: "logo", label: "Logo" },
+] as const;
 
 function SettingsPage() {
-  const { theme } = Route.useLoaderData();
+  const { theme, branding } = Route.useLoaderData();
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("apparence");
 
   return (
@@ -35,7 +42,10 @@ function SettingsPage() {
         ))}
       </div>
 
-      <div className="mt-5">{tab === "apparence" && <ThemeSettings saved={theme} />}</div>
+      <div className="mt-5">
+        {tab === "apparence" && <ThemeSettings saved={theme} />}
+        {tab === "logo" && <BrandingSettings saved={branding} />}
+      </div>
     </div>
   );
 }

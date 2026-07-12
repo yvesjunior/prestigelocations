@@ -18,8 +18,9 @@ import { deleteImageKitFile } from "./imagekit";
 import { loadTheme } from "./public";
 import type { ThemeConfig } from "@/lib/theme";
 import type { ContactInfo } from "@/lib/contact";
-import { loadContact, loadPageContent } from "./public";
+import { loadBranding, loadContact, loadPageContent } from "./public";
 import type { ContentOverrides } from "@/lib/content";
+import type { Branding } from "@/lib/branding";
 import type {
   AdminCategory,
   AdminCustomer,
@@ -699,6 +700,24 @@ export async function getAdminStats() {
 export async function getContactForAdmin(): Promise<ContactInfo> {
   await requireUser("accountant");
   return loadContact();
+}
+
+export async function getBrandingForAdmin(): Promise<Branding> {
+  await requireUser("accountant");
+  return loadBranding();
+}
+
+export async function updateBranding(data: Branding) {
+  const me = await requireUser("admin");
+  await getDb()
+    .insert(settings)
+    .values({ key: "branding", value: data, updatedBy: me.id })
+    .onConflictDoUpdate({
+      target: settings.key,
+      set: { value: data, updatedAt: sql`now()`, updatedBy: me.id },
+    });
+  invalidate("branding");
+  return { ok: true };
 }
 
 export async function updateContact(data: ContactInfo) {

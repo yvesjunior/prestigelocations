@@ -1,8 +1,10 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { CalendarCheck, Menu, X } from "lucide-react";
 import { useState } from "react";
-import logo from "@/assets/logo.png";
+import logoDefault from "@/assets/logo.png";
 import { categoryPagePath, pagePaths, useLang, useT, type Lang, type PageKey } from "@/lib/i18n";
+import { useBranding } from "@/lib/useBranding";
+import { imageUrl } from "@/lib/images";
 
 function LangSwitcher({ className = "" }: { className?: string }) {
   const lang = useLang();
@@ -46,6 +48,8 @@ export function Header() {
   const [open, setOpen] = useState(false);
   const lang = useLang();
   const t = useT();
+  const { logoKey } = useBranding();
+  const logo = imageUrl(logoKey, { h: 128 }) ?? logoDefault;
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 backdrop-blur-md">

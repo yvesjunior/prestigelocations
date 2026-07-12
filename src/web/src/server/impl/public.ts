@@ -9,6 +9,7 @@ import type { CatalogData } from "@/lib/catalog";
 import { DEFAULT_THEME, themeConfigSchema, type ThemeConfig } from "@/lib/theme";
 import { contactInfoSchema, DEFAULT_CONTACT, type ContactInfo } from "@/lib/contact";
 import { contentOverridesSchema, type ContentOverrides } from "@/lib/content";
+import { brandingSchema, DEFAULT_BRANDING, type Branding } from "@/lib/branding";
 
 export async function loadCatalog(): Promise<CatalogData> {
   const db = getDb();
@@ -62,6 +63,14 @@ export async function loadContact(): Promise<ContactInfo> {
   if (!row) return DEFAULT_CONTACT;
   const parsed = contactInfoSchema.safeParse(row.value);
   return parsed.success ? parsed.data : DEFAULT_CONTACT;
+}
+
+export async function loadBranding(): Promise<Branding> {
+  const db = getDb();
+  const [row] = await db.select().from(settings).where(eq(settings.key, "branding"));
+  if (!row) return DEFAULT_BRANDING;
+  const parsed = brandingSchema.safeParse(row.value);
+  return parsed.success ? parsed.data : DEFAULT_BRANDING;
 }
 
 export async function loadPageContent(): Promise<ContentOverrides> {

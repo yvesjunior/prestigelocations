@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { Mail, MapPin, Phone } from "lucide-react";
-import logo from "@/assets/logo.png";
+import logoDefault from "@/assets/logo.png";
 import { pagePaths, useLang, useT } from "@/lib/i18n";
 import { phoneHref } from "@/lib/contact";
 import { useContact } from "@/lib/useContact";
+import { useBranding } from "@/lib/useBranding";
+import { imageUrl } from "@/lib/images";
 
 function FacebookIcon({ className }: { className?: string }) {
   return (
@@ -34,6 +36,8 @@ export function Footer() {
   const lang = useLang();
   const t = useT();
   const contact = useContact();
+  const { logoKey } = useBranding();
+  const logo = imageUrl(logoKey, { h: 128 }) ?? logoDefault;
 
   return (
     <footer className="border-t border-border/60 bg-surface">
