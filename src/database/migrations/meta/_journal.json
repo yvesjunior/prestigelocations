@@ -57,6 +57,13 @@
       "when": 1783829220353,
       "tag": "0007_hard_madrox",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783892152940,
+      "tag": "0008_fresh_skaar",
+      "breakpoints": true
     }
   ]
 }

@@ -20,9 +20,10 @@ import { deleteImageKitFile } from "./imagekit";
 import { loadTheme } from "./public";
 import type { ThemeConfig } from "@/lib/theme";
 import type { ContactInfo } from "@/lib/contact";
-import { loadBranding, loadContact, loadPageContent } from "./public";
+import { loadBranding, loadContact, loadPageContent, loadPricing } from "./public";
 import type { ContentOverrides } from "@/lib/content";
 import type { Branding } from "@/lib/branding";
+import type { Pricing } from "@/lib/pricing";
 import type {
   AdminCategory,
   AdminCustomer,
@@ -69,6 +70,7 @@ export async function listEquipments(): Promise<AdminEquipment[]> {
       formLabelEn: equipments.formLabelEn,
       status: equipments.status,
       imageKey: equipments.imageKey,
+      dailyPriceCents: equipments.dailyPriceCents,
       published: equipments.published,
       position: equipments.position,
     })
@@ -807,6 +809,24 @@ export async function getContactForAdmin(): Promise<ContactInfo> {
 export async function getBrandingForAdmin(): Promise<Branding> {
   await requireUser("accountant");
   return loadBranding();
+}
+
+export async function getPricingForAdmin(): Promise<Pricing> {
+  await requireUser("accountant");
+  return loadPricing();
+}
+
+export async function updatePricing(data: Pricing) {
+  const me = await requireUser("admin");
+  await getDb()
+    .insert(settings)
+    .values({ key: "pricing", value: data, updatedBy: me.id })
+    .onConflictDoUpdate({
+      target: settings.key,
+      set: { value: data, updatedAt: sql`now()`, updatedBy: me.id },
+    });
+  invalidate("pricing");
+  return { ok: true };
 }
 
 export async function updateBranding(data: Branding) {

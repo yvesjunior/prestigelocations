@@ -14,7 +14,13 @@ import appCss from "../styles.css?url";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { ThemeTweaker } from "@/components/dev/ThemeTweaker";
-import { getBrandingFn, getContactFn, getPageContentFn, getThemeFn } from "@/server/public";
+import {
+  getBrandingFn,
+  getContactFn,
+  getPageContentFn,
+  getPricingFn,
+  getThemeFn,
+} from "@/server/public";
 import { imageUrl } from "@/lib/images";
 import { DEFAULT_CONTACT } from "@/lib/contact";
 import { themeToCss } from "@/lib/theme";
@@ -104,13 +110,14 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   // Thème + coordonnées (BD, cache 60 s) — l'admin est la source de vérité.
   loader: async () => {
-    const [theme, contact, content, branding] = await Promise.all([
+    const [theme, contact, content, branding, pricing] = await Promise.all([
       getThemeFn(),
       getContactFn(),
       getPageContentFn(),
       getBrandingFn(),
+      getPricingFn(),
     ]);
-    return { theme, contact, content, branding };
+    return { theme, contact, content, branding, pricing };
   },
   head: ({ loaderData }) => {
     // Favicon : logo téléversé (ImageKit) si présent, sinon l'icône bundlée.

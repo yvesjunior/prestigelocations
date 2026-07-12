@@ -18,6 +18,7 @@ import { DEFAULT_THEME, themeConfigSchema, type ThemeConfig } from "@/lib/theme"
 import { contactInfoSchema, DEFAULT_CONTACT, type ContactInfo } from "@/lib/contact";
 import { contentOverridesSchema, type ContentOverrides } from "@/lib/content";
 import { brandingSchema, DEFAULT_BRANDING, type Branding } from "@/lib/branding";
+import { pricingSchema, DEFAULT_PRICING, type Pricing } from "@/lib/pricing";
 
 export async function loadCatalog(): Promise<CatalogData> {
   const db = getDb();
@@ -52,6 +53,7 @@ export async function loadCatalog(): Promise<CatalogData> {
       status: e.status,
       published: e.published,
       imageKey: e.imageKey,
+      dailyPriceCents: e.dailyPriceCents,
       position: e.position,
     })),
   };
@@ -79,6 +81,14 @@ export async function loadBranding(): Promise<Branding> {
   if (!row) return DEFAULT_BRANDING;
   const parsed = brandingSchema.safeParse(row.value);
   return parsed.success ? parsed.data : DEFAULT_BRANDING;
+}
+
+export async function loadPricing(): Promise<Pricing> {
+  const db = getDb();
+  const [row] = await db.select().from(settings).where(eq(settings.key, "pricing"));
+  if (!row) return DEFAULT_PRICING;
+  const parsed = pricingSchema.safeParse(row.value);
+  return parsed.success ? parsed.data : DEFAULT_PRICING;
 }
 
 export async function loadPageContent(): Promise<ContentOverrides> {

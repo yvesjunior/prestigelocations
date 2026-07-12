@@ -10,6 +10,7 @@ import type { ThemeConfig } from "@/lib/theme";
 import type { ContactInfo } from "@/lib/contact";
 import type { ContentOverrides } from "@/lib/content";
 import type { Branding } from "@/lib/branding";
+import type { Pricing } from "@/lib/pricing";
 
 export const SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE";
 
@@ -52,6 +53,10 @@ export const getPageContentFn = createServerFn({ method: "GET" }).handler(
 export const getBrandingFn = createServerFn({ method: "GET" }).handler(
   async (): Promise<Branding> =>
     loadOr503("branding", async () => (await import("./impl/public")).loadBranding()),
+);
+
+export const getPricingFn = createServerFn({ method: "GET" }).handler(async (): Promise<Pricing> =>
+  loadOr503("pricing", async () => (await import("./impl/public")).loadPricing()),
 );
 
 // ------------------------------------------------- demandes de réservation

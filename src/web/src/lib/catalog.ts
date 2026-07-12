@@ -32,6 +32,8 @@ export interface CatalogEquipment {
   status: EquipmentStatus;
   published: boolean;
   imageKey: string | null;
+  /** Prix de location par jour, en cents (optionnel ; défini via l'admin). */
+  dailyPriceCents?: number | null;
   position: number;
 }
 

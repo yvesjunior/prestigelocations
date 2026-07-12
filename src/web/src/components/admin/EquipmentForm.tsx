@@ -14,6 +14,7 @@ export interface EquipmentFormValues {
   formLabelEn: string | null;
   status: "disponible" | "bientot" | "sur_demande";
   imageKey: string | null;
+  dailyPriceCents: number | null;
   published: boolean;
   position: number;
 }
@@ -58,9 +59,14 @@ export function EquipmentForm({
     formLabelEn: initial.formLabelEn ?? null,
     status: initial.status ?? "disponible",
     imageKey: initial.imageKey ?? null,
+    dailyPriceCents: initial.dailyPriceCents ?? null,
     published: initial.published ?? true,
     position: initial.position ?? 0,
   });
+  // Champ prix saisi en dollars (converti en cents à l'enregistrement).
+  const [priceInput, setPriceInput] = useState(
+    initial.dailyPriceCents != null ? String(initial.dailyPriceCents / 100) : "",
+  );
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const set = <K extends keyof EquipmentFormValues>(key: K, value: EquipmentFormValues[K]) =>
@@ -182,6 +188,27 @@ export function EquipmentForm({
             onChange={(e) => set("code", e.target.value || null)}
             placeholder="Ex. MP-01"
             title="Distingue deux unités portant le même nom — affiché entre parenthèses"
+            className={inputCls}
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Prix / jour (optionnel)</label>
+          <input
+            type="number"
+            min={0}
+            step="0.01"
+            value={priceInput}
+            onChange={(e) => {
+              const raw = e.target.value;
+              setPriceInput(raw);
+              const dollars = parseFloat(raw);
+              set(
+                "dailyPriceCents",
+                raw.trim() === "" || Number.isNaN(dollars) ? null : Math.round(dollars * 100),
+              );
+            }}
+            placeholder="Ex. 85"
+            title="Affiché sur le site seulement si les tarifs sont activés (Paramètres › Tarifs)"
             className={inputCls}
           />
         </div>

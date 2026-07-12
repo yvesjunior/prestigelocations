@@ -77,6 +77,9 @@ export const equipments = pgTable(
     formLabelEn: text("form_label_en"),
     status: equipmentStatus("status").notNull().default("disponible"),
     imageKey: text("image_key"),
+    // Prix de location par jour, en cents (optionnel). Affiché sur le site
+    // seulement si le réglage « afficher les tarifs » est activé.
+    dailyPriceCents: integer("daily_price_cents"),
     published: boolean("published").notNull().default(true),
     position: integer("position").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

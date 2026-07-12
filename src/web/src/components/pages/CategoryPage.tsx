@@ -7,6 +7,8 @@ import { statusSuffix, withCode } from "@/lib/catalog";
 import { BLANK_IMAGE } from "@/lib/images";
 import { pagePaths, useLang, useT } from "@/lib/i18n";
 import { useCatalog } from "@/lib/useCatalog";
+import { usePricing } from "@/lib/usePricing";
+import { formatMoney } from "@/lib/pricing";
 
 /**
  * Page publique d'une catégorie : ses équipements (BD) avec le bouton
@@ -17,6 +19,7 @@ export function CategoryPage({ slug }: { slug: string }) {
   const lang = useLang();
   const t = useT();
   const { categories, equipments } = useCatalog();
+  const pricing = usePricing();
   const category = categories.find((c) => c.slug === slug);
   if (!category) return null; // la route a déjà validé le slug (notFound)
 
@@ -66,6 +69,15 @@ export function CategoryPage({ slug }: { slug: string }) {
                       {withCode(e.name[lang], e.code)}
                     </h2>
                     {suffix && <p className="mt-1 text-xs text-primary">{suffix}</p>}
+                    {pricing.showDailyPrice && e.dailyPriceCents != null && (
+                      <p className="mt-2 font-semibold text-primary">
+                        {formatMoney(e.dailyPriceCents, lang)}
+                        <span className="text-sm font-normal text-muted-foreground">
+                          {" "}
+                          {t.equipmentPage.perDay}
+                        </span>
+                      </p>
+                    )}
                     <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
                       {e.detail?.[lang] ?? ""}
                     </p>

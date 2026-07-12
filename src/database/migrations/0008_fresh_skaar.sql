@@ -1,0 +1,1 @@
+ALTER TABLE "equipments" ADD COLUMN "daily_price_cents" integer;

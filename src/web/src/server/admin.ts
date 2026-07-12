@@ -7,6 +7,7 @@ import { themeConfigSchema } from "@/lib/theme";
 import { contactInfoSchema, type ContactInfo } from "@/lib/contact";
 import { contentOverridesSchema, type ContentOverrides } from "@/lib/content";
 import { brandingSchema, type Branding } from "@/lib/branding";
+import { pricingSchema, type Pricing } from "@/lib/pricing";
 
 // ---------------------------------------------------------------- types
 
@@ -25,6 +26,7 @@ export type AdminEquipment = {
   formLabelEn: string | null;
   status: "disponible" | "bientot" | "sur_demande";
   imageKey: string | null;
+  dailyPriceCents: number | null;
   published: boolean;
   position: number;
 };
@@ -119,6 +121,7 @@ const equipmentInput = z.object({
   formLabelEn: z.string().nullable(),
   status: z.enum(["disponible", "bientot", "sur_demande"]),
   imageKey: z.string().nullable(),
+  dailyPriceCents: z.number().int().min(0).nullable(),
   published: z.boolean(),
   position: z.number().int().min(0),
 });
@@ -382,3 +385,13 @@ export const getBrandingForAdminFn = createServerFn({ method: "GET" }).handler(
 export const updateBrandingFn = createServerFn({ method: "POST" })
   .validator(brandingSchema)
   .handler(async ({ data }) => (await import("./impl/admin")).updateBranding(data));
+
+// ---------------------------------------------------------------- tarifs
+
+export const getPricingForAdminFn = createServerFn({ method: "GET" }).handler(
+  async (): Promise<Pricing> => (await import("./impl/admin")).getPricingForAdmin(),
+);
+
+export const updatePricingFn = createServerFn({ method: "POST" })
+  .validator(pricingSchema)
+  .handler(async ({ data }) => (await import("./impl/admin")).updatePricing(data));
