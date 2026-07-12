@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { enUS, fr } from "react-day-picker/locale";
 import { Calendar } from "@/components/ui/calendar";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { SectionTitle } from "@/components/site/SectionTitle";
 import { useLang, useT } from "@/lib/i18n";
 import { withCode } from "@/lib/catalog";
@@ -52,9 +53,6 @@ export function ContactPage() {
   const [website, setWebsite] = useState(""); // honeypot — reste vide chez un humain
   const [range, setRange] = useState<DateRange | undefined>();
   const [unavailable, setUnavailable] = useState<{ start: string; end: string }[]>([]);
-
-  const toggleSlug = (s: string) =>
-    setSlugs((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
 
   // Périodes réservées de TOUS les équipements choisis (union) : une date n'est
   // libre que si chacun l'est → grise toute date réservée par au moins un.
@@ -228,19 +226,17 @@ export function ContactPage() {
 
               <div>
                 <label className={labelCls}>{t.contactPage.equipmentLabel}</label>
-                <div className="grid gap-1.5 rounded-md border border-input bg-background p-3 sm:grid-cols-2">
-                  {options.map((e) => (
-                    <label key={e.slug} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={slugs.includes(e.slug)}
-                        onChange={() => toggleSlug(e.slug)}
-                        className="h-4 w-4 accent-[var(--primary)]"
-                      />
-                      {withCode((e.formLabel ?? e.name)[lang], e.code)}
-                    </label>
-                  ))}
-                </div>
+                <MultiSelect
+                  options={options.map((e) => ({
+                    value: e.slug,
+                    label: withCode((e.formLabel ?? e.name)[lang], e.code),
+                  }))}
+                  selected={slugs}
+                  onChange={setSlugs}
+                  placeholder={t.contactPage.equipmentPlaceholder}
+                  searchPlaceholder={t.contactPage.equipmentSearch}
+                  emptyText={t.contactPage.equipmentEmpty}
+                />
                 <p className="mt-1.5 text-xs text-muted-foreground">{t.contactPage.otherOption}</p>
               </div>
 

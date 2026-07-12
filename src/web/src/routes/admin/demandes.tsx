@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { iconActionCls } from "@/components/admin/action-icons";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
@@ -145,19 +146,6 @@ function RequestsPage() {
     setForm((f) => (f ? { ...f, ...p } : f));
   }
 
-  function toggleEquipment(equipmentId: number) {
-    setForm((f) =>
-      f
-        ? {
-            ...f,
-            equipmentIds: f.equipmentIds.includes(equipmentId)
-              ? f.equipmentIds.filter((x) => x !== equipmentId)
-              : [...f.equipmentIds, equipmentId],
-          }
-        : f,
-    );
-  }
-
   function setStatus(r: AdminRequest, status: RequestStatus) {
     run(() => updateRequestStatusFn({ data: { id: r.id, status } }));
   }
@@ -232,19 +220,19 @@ function RequestsPage() {
                           <span className="text-muted-foreground/70">
                             — vide = Autre / plusieurs
                           </span>
-                          <div className="mt-1 grid max-h-40 gap-1 overflow-y-auto rounded-md border border-input bg-background p-2 sm:grid-cols-2">
-                            {equipments.map((eq: AdminEquipment) => (
-                              <label key={eq.id} className="flex items-center gap-2 text-sm">
-                                <input
-                                  type="checkbox"
-                                  checked={form.equipmentIds.includes(eq.id)}
-                                  disabled={busy}
-                                  onChange={() => toggleEquipment(eq.id)}
-                                  className="h-4 w-4 accent-[var(--primary)]"
-                                />
-                                {eq.code ? `${eq.nameFr} (${eq.code})` : eq.nameFr}
-                              </label>
-                            ))}
+                          <div className="mt-1">
+                            <MultiSelect
+                              options={equipments.map((eq: AdminEquipment) => ({
+                                value: String(eq.id),
+                                label: eq.code ? `${eq.nameFr} (${eq.code})` : eq.nameFr,
+                              }))}
+                              selected={form.equipmentIds.map(String)}
+                              onChange={(vals) => patch({ equipmentIds: vals.map(Number) })}
+                              disabled={busy}
+                              placeholder="Choisir un ou plusieurs équipements…"
+                              searchPlaceholder="Rechercher un équipement…"
+                              emptyText="Aucun équipement trouvé."
+                            />
                           </div>
                         </div>
                         <label className="text-xs text-muted-foreground">

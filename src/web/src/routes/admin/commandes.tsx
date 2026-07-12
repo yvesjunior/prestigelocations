@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { iconActionCls } from "@/components/admin/action-icons";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
@@ -80,14 +81,6 @@ function OrdersPage() {
 
   const set = <K extends keyof typeof EMPTY_FORM>(key: K, value: (typeof EMPTY_FORM)[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
-
-  const toggleEquipment = (id: number) =>
-    setForm((prev) => ({
-      ...prev,
-      equipmentIds: prev.equipmentIds.includes(id)
-        ? prev.equipmentIds.filter((x) => x !== id)
-        : [...prev.equipmentIds, id],
-    }));
 
   // Périodes déjà réservées des équipements sélectionnés (aide à la saisie).
   const bookedByEquipment = equipments
@@ -327,19 +320,17 @@ function OrdersPage() {
 
         <div className="mt-4">
           <label className={labelCls}>Équipements ({form.equipmentIds.length})</label>
-          <div className="grid max-h-56 gap-1.5 overflow-y-auto rounded-md border border-input bg-background p-3 sm:grid-cols-2">
-            {equipments.map((eq) => (
-              <label key={eq.id} className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={form.equipmentIds.includes(eq.id)}
-                  onChange={() => toggleEquipment(eq.id)}
-                  className="h-4 w-4 accent-[var(--primary)]"
-                />
-                {eq.code ? `${eq.nameFr} (${eq.code})` : eq.nameFr}
-              </label>
-            ))}
-          </div>
+          <MultiSelect
+            options={equipments.map((eq) => ({
+              value: String(eq.id),
+              label: eq.code ? `${eq.nameFr} (${eq.code})` : eq.nameFr,
+            }))}
+            selected={form.equipmentIds.map(String)}
+            onChange={(vals) => set("equipmentIds", vals.map(Number))}
+            placeholder="Choisir un ou plusieurs équipements…"
+            searchPlaceholder="Rechercher un équipement…"
+            emptyText="Aucun équipement trouvé."
+          />
           {bookedByEquipment.length > 0 && (
             <div className="mt-1.5 space-y-0.5 text-xs text-muted-foreground">
               {bookedByEquipment.map((b) => (
