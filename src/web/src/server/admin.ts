@@ -68,9 +68,7 @@ export type AdminOrder = {
   customerPhone: string;
   customerEmail: string | null;
   customerNote: string | null;
-  equipmentId: number;
-  equipmentName: string;
-  equipmentCode: string | null;
+  equipments: { id: number; name: string; code: string | null }[];
   startDate: string;
   endDate: string;
   status: "confirmee" | "annulee";
@@ -157,7 +155,7 @@ export type CustomerInput = z.infer<typeof customerInput>;
 
 const orderInput = z.object({
   customerId: z.number().int(),
-  equipmentId: z.number().int(),
+  equipmentIds: z.array(z.number().int()).min(1),
   startDate: dateStr,
   endDate: dateStr,
   note: z.string().nullable(),
@@ -234,6 +232,7 @@ export const updateOrderFn = createServerFn({ method: "POST" })
       endDate: dateStr.optional(),
       note: z.string().nullable().optional(),
       status: z.enum(["confirmee", "annulee"]).optional(),
+      equipmentIds: z.array(z.number().int()).min(1).optional(),
     }),
   )
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> =>

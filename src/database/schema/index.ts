@@ -187,9 +187,6 @@ export const orders = pgTable(
     customerId: integer("customer_id")
       .notNull()
       .references(() => customers.id, { onDelete: "restrict" }),
-    equipmentId: integer("equipment_id")
-      .notNull()
-      .references(() => equipments.id, { onDelete: "restrict" }),
     startDate: date("start_date").notNull(),
     endDate: date("end_date").notNull(),
     status: orderStatus("status").notNull().default("confirmee"),
@@ -203,7 +200,27 @@ export const orders = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    index("orders_equipment_idx").on(t.equipmentId, t.startDate, t.endDate),
+    index("orders_dates_idx").on(t.startDate, t.endDate),
     index("orders_customer_idx").on(t.customerId),
+  ],
+);
+
+// Lignes d'une commande : une commande loue un ou plusieurs équipements pour la
+// même période (dates portées par la commande). La disponibilité d'un
+// équipement dérive des commandes confirmées qui le contiennent.
+export const orderItems = pgTable(
+  "order_items",
+  {
+    id: serial("id").primaryKey(),
+    orderId: integer("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    equipmentId: integer("equipment_id")
+      .notNull()
+      .references(() => equipments.id, { onDelete: "restrict" }),
+  },
+  (t) => [
+    index("order_items_order_idx").on(t.orderId),
+    index("order_items_equipment_idx").on(t.equipmentId, t.orderId),
   ],
 );

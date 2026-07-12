@@ -36,7 +36,7 @@ export function EquipmentAvailability({
   const equipmentOrders = useMemo(
     () =>
       orders
-        .filter((o) => o.equipmentId === equipmentId)
+        .filter((o) => o.equipments.some((e) => e.id === equipmentId))
         .sort((a, b) => a.startDate.localeCompare(b.startDate)),
     [orders, equipmentId],
   );

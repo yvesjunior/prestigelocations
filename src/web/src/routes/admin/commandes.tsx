@@ -58,7 +58,7 @@ function statusBadge(o: AdminOrder, today: string): { label: string; cls: string
 }
 
 const EMPTY_FORM = {
-  equipmentId: 0,
+  equipmentIds: [] as number[],
   customerId: "" as string, // id numérique, ou "new" pour un nouveau client
   newName: "",
   newPhone: "",
@@ -71,7 +71,7 @@ const EMPTY_FORM = {
 function OrdersPage() {
   const { orders, customers, equipments } = Route.useLoaderData();
   const router = useRouter();
-  const [form, setForm] = useState({ ...EMPTY_FORM, equipmentId: equipments[0]?.id ?? 0 });
+  const [form, setForm] = useState({ ...EMPTY_FORM });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,12 +81,30 @@ function OrdersPage() {
   const set = <K extends keyof typeof EMPTY_FORM>(key: K, value: (typeof EMPTY_FORM)[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
-  // Périodes déjà réservées pour l'équipement sélectionné (aide à la saisie).
-  const bookedPeriods = orders
-    .filter(
-      (o) => o.equipmentId === form.equipmentId && o.status === "confirmee" && o.endDate >= today,
-    )
-    .sort((a, b) => a.startDate.localeCompare(b.startDate));
+  const toggleEquipment = (id: number) =>
+    setForm((prev) => ({
+      ...prev,
+      equipmentIds: prev.equipmentIds.includes(id)
+        ? prev.equipmentIds.filter((x) => x !== id)
+        : [...prev.equipmentIds, id],
+    }));
+
+  // Périodes déjà réservées des équipements sélectionnés (aide à la saisie).
+  const bookedByEquipment = equipments
+    .filter((e) => form.equipmentIds.includes(e.id))
+    .map((e) => ({
+      label: e.code ? `${e.nameFr} (${e.code})` : e.nameFr,
+      periods: orders
+        .filter(
+          (o) =>
+            o.status === "confirmee" &&
+            o.endDate >= today &&
+            o.id !== editingId &&
+            o.equipments.some((x) => x.id === e.id),
+        )
+        .sort((a, b) => a.startDate.localeCompare(b.startDate)),
+    }))
+    .filter((x) => x.periods.length > 0);
 
   async function run(action: () => Promise<{ ok: boolean; error?: string }>) {
     setBusy(true);
@@ -110,6 +128,9 @@ function OrdersPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const ok = await run(async () => {
+      if (form.equipmentIds.length === 0) {
+        return { ok: false as const, error: "Sélectionnez au moins un équipement." };
+      }
       if (editingId !== null) {
         return updateOrderFn({
           data: {
@@ -117,6 +138,7 @@ function OrdersPage() {
             startDate: form.startDate,
             endDate: form.endDate,
             note: form.note.trim() || null,
+            equipmentIds: form.equipmentIds,
           },
         });
       }
@@ -138,7 +160,7 @@ function OrdersPage() {
       return createOrderFn({
         data: {
           customerId,
-          equipmentId: form.equipmentId,
+          equipmentIds: form.equipmentIds,
           startDate: form.startDate,
           endDate: form.endDate,
           note: form.note.trim() || null,
@@ -146,7 +168,7 @@ function OrdersPage() {
       });
     });
     if (ok) {
-      setForm({ ...EMPTY_FORM, equipmentId: equipments[0]?.id ?? 0 });
+      setForm({ ...EMPTY_FORM });
       setEditingId(null);
     }
   }
@@ -155,7 +177,7 @@ function OrdersPage() {
     setEditingId(o.id);
     setForm({
       ...EMPTY_FORM,
-      equipmentId: o.equipmentId,
+      equipmentIds: o.equipments.map((e) => e.id),
       customerId: String(o.customerId),
       startDate: o.startDate,
       endDate: o.endDate,
@@ -169,7 +191,7 @@ function OrdersPage() {
   function cancelOrder(o: AdminOrder) {
     if (
       !confirm(
-        `Annuler la commande de ${o.customerName} (${o.equipmentName}) ? Les dates seront libérées.`,
+        `Annuler la commande de ${o.customerName} (${o.equipments.map((e) => e.name).join(", ")}) ? Les dates seront libérées.`,
       )
     )
       return;
@@ -186,9 +208,9 @@ function OrdersPage() {
     <div className="max-w-5xl">
       <h1 className="text-xl font-bold">Commandes</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Une commande lie un client et un équipement pour une période : l'équipement est indisponible
-        sur ces dates. Annuler une commande libère les dates (aucune suppression — l'historique
-        reste).
+        Une commande lie un client et un ou plusieurs équipements pour une période : ces équipements
+        sont indisponibles sur ces dates. Annuler une commande libère les dates (aucune suppression
+        — l'historique reste).
       </p>
       {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
 
@@ -218,7 +240,9 @@ function OrdersPage() {
               return (
                 <tr key={o.id} className="border-b border-border/40 last:border-0">
                   <td className="px-4 py-3 font-medium">
-                    {o.equipmentCode ? `${o.equipmentName} (${o.equipmentCode})` : o.equipmentName}
+                    {o.equipments
+                      .map((e) => (e.code ? `${e.name} (${e.code})` : e.name))
+                      .join(", ")}
                   </td>
                   <td className="px-4 py-3">
                     {o.customerName}
@@ -297,51 +321,56 @@ function OrdersPage() {
       >
         <p className="text-sm font-bold">
           {editing
-            ? `Modifier la commande — ${editing.equipmentName} pour ${editing.customerName}`
+            ? `Modifier la commande — ${editing.equipments.map((e) => e.name).join(", ")} pour ${editing.customerName}`
             : "Nouvelle commande"}
         </p>
 
-        {!editing && (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className={labelCls}>Équipement</label>
-              <select
-                value={form.equipmentId}
-                onChange={(e) => set("equipmentId", Number(e.target.value))}
-                className={inputCls}
-              >
-                {equipments.map((eq) => (
-                  <option key={eq.id} value={eq.id}>
-                    {eq.code ? `${eq.nameFr} (${eq.code})` : eq.nameFr}
-                  </option>
-                ))}
-              </select>
-              {bookedPeriods.length > 0 && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Déjà réservé :{" "}
-                  {bookedPeriods.map((b) => `du ${b.startDate} au ${b.endDate}`).join(" · ")}
+        <div className="mt-4">
+          <label className={labelCls}>Équipements ({form.equipmentIds.length})</label>
+          <div className="grid max-h-56 gap-1.5 overflow-y-auto rounded-md border border-input bg-background p-3 sm:grid-cols-2">
+            {equipments.map((eq) => (
+              <label key={eq.id} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={form.equipmentIds.includes(eq.id)}
+                  onChange={() => toggleEquipment(eq.id)}
+                  className="h-4 w-4 accent-[var(--primary)]"
+                />
+                {eq.code ? `${eq.nameFr} (${eq.code})` : eq.nameFr}
+              </label>
+            ))}
+          </div>
+          {bookedByEquipment.length > 0 && (
+            <div className="mt-1.5 space-y-0.5 text-xs text-muted-foreground">
+              {bookedByEquipment.map((b) => (
+                <p key={b.label}>
+                  <span className="text-foreground/70">{b.label}</span> — déjà réservé{" "}
+                  {b.periods.map((p) => `du ${p.startDate} au ${p.endDate}`).join(" · ")}
                 </p>
-              )}
+              ))}
             </div>
-            <div>
-              <label className={labelCls}>Client</label>
-              <select
-                required
-                value={form.customerId}
-                onChange={(e) => set("customerId", e.target.value)}
-                className={inputCls}
-              >
-                <option value="" disabled>
-                  Choisir un client…
+          )}
+        </div>
+
+        {!editing && (
+          <div className="mt-4">
+            <label className={labelCls}>Client</label>
+            <select
+              required
+              value={form.customerId}
+              onChange={(e) => set("customerId", e.target.value)}
+              className={inputCls}
+            >
+              <option value="" disabled>
+                Choisir un client…
+              </option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} — {c.phone}
                 </option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} — {c.phone}
-                  </option>
-                ))}
-                <option value="new">+ Nouveau client</option>
-              </select>
-            </div>
+              ))}
+              <option value="new">+ Nouveau client</option>
+            </select>
           </div>
         )}
 
@@ -413,14 +442,14 @@ function OrdersPage() {
 
         <div className="mt-4 flex items-center gap-3">
           <button type="submit" disabled={busy} className="btn-gold-outline disabled:opacity-60">
-            {busy ? "Enregistrement…" : editing ? "Enregistrer les dates" : "Créer la commande"}
+            {busy ? "Enregistrement…" : editing ? "Enregistrer" : "Créer la commande"}
           </button>
           {editing && (
             <button
               type="button"
               onClick={() => {
                 setEditingId(null);
-                setForm({ ...EMPTY_FORM, equipmentId: equipments[0]?.id ?? 0 });
+                setForm({ ...EMPTY_FORM });
               }}
               className="text-sm text-muted-foreground hover:underline"
             >
@@ -439,12 +468,10 @@ function OrdersPage() {
           {viewing && (
             <div>
               <DetailRow
-                label="Équipement"
-                value={
-                  viewing.equipmentCode
-                    ? `${viewing.equipmentName} (${viewing.equipmentCode})`
-                    : viewing.equipmentName
-                }
+                label={viewing.equipments.length > 1 ? "Équipements" : "Équipement"}
+                value={viewing.equipments
+                  .map((e) => (e.code ? `${e.name} (${e.code})` : e.name))
+                  .join("\n")}
               />
               <DetailRow label="Client" value={viewing.customerName} />
               <DetailRow label="Téléphone" value={viewing.customerPhone} />

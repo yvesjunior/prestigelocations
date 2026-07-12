@@ -1,11 +1,12 @@
 // Implémentation serveur des fonctions d'administration — importée
 // dynamiquement depuis les handlers uniquement.
-import { and, asc, count, desc, eq, gte, isNotNull, lte, ne, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNotNull, lte, ne, sql } from "drizzle-orm";
 import {
   categories,
   customers,
   equipments,
   hashPassword,
+  orderItems,
   orders,
   reservationRequests,
   settings,
@@ -267,7 +268,8 @@ export async function createCustomer(
 
 export async function listOrders(): Promise<AdminOrder[]> {
   await requireUser("accountant");
-  return getDb()
+  const db = getDb();
+  const rows = await db
     .select({
       id: orders.id,
       customerId: orders.customerId,
@@ -275,9 +277,6 @@ export async function listOrders(): Promise<AdminOrder[]> {
       customerPhone: customers.phone,
       customerEmail: customers.email,
       customerNote: customers.note,
-      equipmentId: orders.equipmentId,
-      equipmentName: equipments.nameFr,
-      equipmentCode: equipments.code,
       startDate: orders.startDate,
       endDate: orders.endDate,
       status: orders.status,
@@ -285,12 +284,30 @@ export async function listOrders(): Promise<AdminOrder[]> {
     })
     .from(orders)
     .innerJoin(customers, eq(orders.customerId, customers.id))
-    .innerJoin(equipments, eq(orders.equipmentId, equipments.id))
     .orderBy(desc(orders.startDate), desc(orders.id));
+
+  // Équipements de chaque commande (lignes order_items).
+  const items = await db
+    .select({
+      orderId: orderItems.orderId,
+      id: equipments.id,
+      name: equipments.nameFr,
+      code: equipments.code,
+    })
+    .from(orderItems)
+    .innerJoin(equipments, eq(orderItems.equipmentId, equipments.id))
+    .orderBy(asc(equipments.nameFr));
+  const byOrder = new Map<number, AdminOrder["equipments"]>();
+  for (const it of items) {
+    const arr = byOrder.get(it.orderId) ?? [];
+    arr.push({ id: it.id, name: it.name, code: it.code });
+    byOrder.set(it.orderId, arr);
+  }
+  return rows.map((o) => ({ ...o, equipments: byOrder.get(o.id) ?? [] }));
 }
 
 /**
- * Périodes inclusives : conflit si une autre commande `confirmee` du même
+ * Périodes inclusives : conflit si une commande `confirmee` contenant cet
  * équipement chevauche [startDate, endDate]. `excludeId` = commande en cours
  * de modification.
  */
@@ -301,7 +318,7 @@ async function findOrderConflict(
   excludeId?: number,
 ): Promise<{ startDate: string; endDate: string } | undefined> {
   const conditions = [
-    eq(orders.equipmentId, equipmentId),
+    eq(orderItems.equipmentId, equipmentId),
     eq(orders.status, "confirmee"),
     lte(orders.startDate, endDate),
     gte(orders.endDate, startDate),
@@ -309,10 +326,21 @@ async function findOrderConflict(
   if (excludeId !== undefined) conditions.push(ne(orders.id, excludeId));
   const [conflict] = await getDb()
     .select({ startDate: orders.startDate, endDate: orders.endDate })
-    .from(orders)
+    .from(orderItems)
+    .innerJoin(orders, eq(orderItems.orderId, orders.id))
     .where(and(...conditions))
     .limit(1);
   return conflict;
+}
+
+/** Étiquettes FR des équipements d'un lot (pour des messages d'erreur clairs). */
+async function equipmentLabels(ids: number[]): Promise<Map<number, string>> {
+  if (ids.length === 0) return new Map();
+  const rows = await getDb()
+    .select({ id: equipments.id, nameFr: equipments.nameFr })
+    .from(equipments)
+    .where(inArray(equipments.id, ids));
+  return new Map(rows.map((r) => [r.id, r.nameFr]));
 }
 
 export async function createOrder(data: OrderInput): Promise<{ ok: boolean; error?: string }> {
@@ -320,16 +348,33 @@ export async function createOrder(data: OrderInput): Promise<{ ok: boolean; erro
   if (data.endDate < data.startDate) {
     return { ok: false, error: "La date de fin doit être égale ou postérieure au début." };
   }
-  const conflict = await findOrderConflict(data.equipmentId, data.startDate, data.endDate);
-  if (conflict) {
-    return {
-      ok: false,
-      error: `Conflit : cet équipement est déjà loué du ${conflict.startDate} au ${conflict.endDate}.`,
-    };
+  if (data.equipmentIds.length === 0) {
+    return { ok: false, error: "Sélectionnez au moins un équipement." };
   }
-  await getDb()
+  const labels = await equipmentLabels(data.equipmentIds);
+  for (const equipmentId of data.equipmentIds) {
+    const conflict = await findOrderConflict(equipmentId, data.startDate, data.endDate);
+    if (conflict) {
+      return {
+        ok: false,
+        error: `Conflit : ${labels.get(equipmentId) ?? "un équipement"} est déjà loué du ${conflict.startDate} au ${conflict.endDate}.`,
+      };
+    }
+  }
+  const db = getDb();
+  const [order] = await db
     .insert(orders)
-    .values({ ...data, createdBy: me.id });
+    .values({
+      customerId: data.customerId,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      note: data.note,
+      createdBy: me.id,
+    })
+    .returning({ id: orders.id });
+  await db
+    .insert(orderItems)
+    .values(data.equipmentIds.map((equipmentId) => ({ orderId: order!.id, equipmentId })));
   return { ok: true };
 }
 
@@ -339,11 +384,15 @@ export async function updateOrder(data: {
   endDate?: string;
   note?: string | null;
   status?: "confirmee" | "annulee";
+  equipmentIds?: number[];
 }): Promise<{ ok: boolean; error?: string }> {
   await requireUser("admin");
   const db = getDb();
   const [current] = await db.select().from(orders).where(eq(orders.id, data.id));
   if (!current) return { ok: false, error: "Commande introuvable." };
+  if (data.equipmentIds !== undefined && data.equipmentIds.length === 0) {
+    return { ok: false, error: "Sélectionnez au moins un équipement." };
+  }
 
   const next = {
     startDate: data.startDate ?? current.startDate,
@@ -354,26 +403,40 @@ export async function updateOrder(data: {
   if (next.endDate < next.startDate) {
     return { ok: false, error: "La date de fin doit être égale ou postérieure au début." };
   }
-  // Une commande confirmée (nouvelles dates ou réactivation) ne doit pas
-  // chevaucher une autre commande confirmée du même équipement.
+
+  // Ensemble d'équipements effectif (nouveau si fourni, sinon celui en place).
+  const currentIds = (
+    await db
+      .select({ equipmentId: orderItems.equipmentId })
+      .from(orderItems)
+      .where(eq(orderItems.orderId, data.id))
+  ).map((r) => r.equipmentId);
+  const effectiveIds = data.equipmentIds ?? currentIds;
+
+  // Une commande confirmée (nouvelles dates, réactivation ou nouvel équipement)
+  // ne doit pas chevaucher une autre commande confirmée du même équipement.
   if (next.status === "confirmee") {
-    const conflict = await findOrderConflict(
-      current.equipmentId,
-      next.startDate,
-      next.endDate,
-      data.id,
-    );
-    if (conflict) {
-      return {
-        ok: false,
-        error: `Conflit : cet équipement est déjà loué du ${conflict.startDate} au ${conflict.endDate}.`,
-      };
+    const labels = await equipmentLabels(effectiveIds);
+    for (const equipmentId of effectiveIds) {
+      const conflict = await findOrderConflict(equipmentId, next.startDate, next.endDate, data.id);
+      if (conflict) {
+        return {
+          ok: false,
+          error: `Conflit : ${labels.get(equipmentId) ?? "un équipement"} est déjà loué du ${conflict.startDate} au ${conflict.endDate}.`,
+        };
+      }
     }
   }
   await db
     .update(orders)
     .set({ ...next, updatedAt: sql`now()` })
     .where(eq(orders.id, data.id));
+  if (data.equipmentIds !== undefined) {
+    await db.delete(orderItems).where(eq(orderItems.orderId, data.id));
+    await db
+      .insert(orderItems)
+      .values(data.equipmentIds.map((equipmentId) => ({ orderId: data.id, equipmentId })));
+  }
   return { ok: true };
 }
 
@@ -539,15 +602,18 @@ export async function validateRequest(id: number): Promise<{ ok: boolean; error?
     customerId = created!.id;
   }
 
-  await db.insert(orders).values({
-    customerId,
-    equipmentId: request.equipmentId,
-    startDate: request.startDate,
-    endDate: request.endDate,
-    note: `Demande #${request.id}`,
-    requestId: request.id,
-    createdBy: me.id,
-  });
+  const [order] = await db
+    .insert(orders)
+    .values({
+      customerId,
+      startDate: request.startDate,
+      endDate: request.endDate,
+      note: `Demande #${request.id}`,
+      requestId: request.id,
+      createdBy: me.id,
+    })
+    .returning({ id: orders.id });
+  await db.insert(orderItems).values({ orderId: order!.id, equipmentId: request.equipmentId });
   await db
     .update(reservationRequests)
     .set({ status: "traitee", handledBy: me.id, handledAt: sql`now()`, updatedAt: sql`now()` })

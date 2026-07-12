@@ -2,7 +2,14 @@
 // dynamiquement depuis les handlers de server functions (jamais côté client).
 import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
 import { getRequestIP } from "@tanstack/react-start/server";
-import { categories, equipments, orders, reservationRequests, settings } from "@prestige/database";
+import {
+  categories,
+  equipments,
+  orderItems,
+  orders,
+  reservationRequests,
+  settings,
+} from "@prestige/database";
 import { rateLimit } from "../rate-limit";
 import { getDb } from "../db";
 import type { CatalogData } from "@/lib/catalog";
@@ -96,10 +103,11 @@ export async function loadUnavailableRanges(
   if (!equipment) return [];
   const rows = await db
     .select({ start: orders.startDate, end: orders.endDate })
-    .from(orders)
+    .from(orderItems)
+    .innerJoin(orders, eq(orderItems.orderId, orders.id))
     .where(
       and(
-        eq(orders.equipmentId, equipment.id),
+        eq(orderItems.equipmentId, equipment.id),
         eq(orders.status, "confirmee"),
         gte(orders.endDate, sql`current_date`),
       ),
@@ -162,10 +170,11 @@ export async function submitReservationRequest(
     if (equipmentId !== null && hasRange) {
       const [clash] = await db
         .select({ id: orders.id })
-        .from(orders)
+        .from(orderItems)
+        .innerJoin(orders, eq(orderItems.orderId, orders.id))
         .where(
           and(
-            eq(orders.equipmentId, equipmentId),
+            eq(orderItems.equipmentId, equipmentId),
             eq(orders.status, "confirmee"),
             lte(orders.startDate, data.endDate!),
             gte(orders.endDate, data.startDate!),
