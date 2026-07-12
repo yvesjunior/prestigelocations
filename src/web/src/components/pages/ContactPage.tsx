@@ -38,28 +38,35 @@ export function ContactPage() {
   const options = equipments;
   const search = useSearch({ strict: false }) as { equipement?: string };
   const preselected =
-    search.equipement && options.some((e) => e.slug === search.equipement) ? search.equipement : "";
+    search.equipement && options.some((e) => e.slug === search.equipement)
+      ? [search.equipement]
+      : [];
 
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [slug, setSlug] = useState<string>(preselected); // "" = Autre / plusieurs équipements
+  const [slugs, setSlugs] = useState<string[]>(preselected); // vide = Autre / plusieurs
   const [message, setMessage] = useState("");
   const [website, setWebsite] = useState(""); // honeypot — reste vide chez un humain
   const [range, setRange] = useState<DateRange | undefined>();
   const [unavailable, setUnavailable] = useState<{ start: string; end: string }[]>([]);
 
-  // Périodes réservées de l'équipement choisi (grisées dans le calendrier).
+  const toggleSlug = (s: string) =>
+    setSlugs((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
+
+  // Périodes réservées de TOUS les équipements choisis (union) : une date n'est
+  // libre que si chacun l'est → grise toute date réservée par au moins un.
+  const slugKey = slugs.join(",");
   useEffect(() => {
     setRange(undefined);
-    if (!slug) {
+    if (slugs.length === 0) {
       setUnavailable([]);
       return;
     }
     let stale = false;
-    getUnavailableRangesFn({ data: { slug } })
+    getUnavailableRangesFn({ data: { slugs } })
       .then((ranges) => {
         if (!stale) setUnavailable(ranges);
       })
@@ -67,7 +74,8 @@ export function ContactPage() {
     return () => {
       stale = true;
     };
-  }, [slug]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slugKey]);
 
   const disabledDays = [
     { before: new Date() },
@@ -77,7 +85,7 @@ export function ContactPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     // Équipement précis → la période est obligatoire (le serveur revérifie).
-    if (slug && !range?.from) {
+    if (slugs.length > 0 && !range?.from) {
       setError(t.contactPage.errors.dates_required);
       return;
     }
@@ -88,7 +96,7 @@ export function ContactPage() {
         data: {
           name,
           phone,
-          equipmentSlug: slug || null,
+          equipmentSlugs: slugs,
           startDate: range?.from ? toIso(range.from) : null,
           endDate: range?.to ? toIso(range.to) : range?.from ? toIso(range.from) : null,
           message: message.trim() || null,
@@ -219,26 +227,24 @@ export function ContactPage() {
               </div>
 
               <div>
-                <label htmlFor="equipement" className={labelCls}>
-                  {t.contactPage.equipmentLabel}
-                </label>
-                <select
-                  id="equipement"
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  className={inputCls}
-                >
-                  {/* « Autre » en tête : c'est la valeur par défaut (pas de calendrier). */}
-                  <option value="">{t.contactPage.otherOption}</option>
+                <label className={labelCls}>{t.contactPage.equipmentLabel}</label>
+                <div className="grid gap-1.5 rounded-md border border-input bg-background p-3 sm:grid-cols-2">
                   {options.map((e) => (
-                    <option key={e.slug} value={e.slug}>
+                    <label key={e.slug} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={slugs.includes(e.slug)}
+                        onChange={() => toggleSlug(e.slug)}
+                        className="h-4 w-4 accent-[var(--primary)]"
+                      />
                       {withCode((e.formLabel ?? e.name)[lang], e.code)}
-                    </option>
+                    </label>
                   ))}
-                </select>
+                </div>
+                <p className="mt-1.5 text-xs text-muted-foreground">{t.contactPage.otherOption}</p>
               </div>
 
-              {slug && (
+              {slugs.length > 0 && (
                 <div>
                   <p className={labelCls}>{t.contactPage.datesLabel}</p>
                   <div className="rounded-md border border-input p-1">

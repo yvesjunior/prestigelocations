@@ -92,8 +92,8 @@ export type AdminRequest = {
   id: number;
   name: string;
   phone: string;
-  equipmentId: number | null;
-  equipmentLabel: string;
+  // Équipements demandés (equipmentId null = « Autre / plusieurs »).
+  equipments: { equipmentId: number | null; label: string }[];
   startDate: string | null;
   endDate: string | null;
   message: string | null;
@@ -265,7 +265,8 @@ const requestEditInput = z.object({
   id: z.number().int(),
   name: z.string().min(1),
   phone: z.string().min(7),
-  equipmentId: z.number().int().nullable(),
+  // Équipements demandés (vide = « Autre / plusieurs équipements »).
+  equipmentIds: z.array(z.number().int()),
   startDate: dateStr.nullable(),
   endDate: dateStr.nullable(),
   message: z.string().nullable(),

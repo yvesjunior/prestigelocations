@@ -72,7 +72,7 @@ function escapeHtml(s: string): string {
 export type NewRequestNotification = {
   name: string;
   phone: string;
-  equipmentLabel: string;
+  equipmentLabels: string[];
   startDate: string | null;
   endDate: string | null;
   message: string | null;
@@ -88,12 +88,13 @@ export async function notifyNewRequest(r: NewRequestNotification): Promise<void>
   const hasRange = Boolean(r.startDate && r.endDate);
   const period = hasRange ? `du ${r.startDate} au ${r.endDate}` : "période non précisée";
   const adminUrl = BASE_URL ? `${BASE_URL}/admin/demandes` : "/admin/demandes";
-  const subject = `Nouvelle demande de réservation — ${r.equipmentLabel}`;
+  const equipmentText = r.equipmentLabels.join(", ") || "Autre / plusieurs équipements";
+  const subject = `Nouvelle demande de réservation — ${equipmentText}`;
 
   const text = [
     `Nom : ${r.name}`,
     `Téléphone : ${r.phone}`,
-    `Équipement : ${r.equipmentLabel}`,
+    `${r.equipmentLabels.length > 1 ? "Équipements" : "Équipement"} : ${equipmentText}`,
     `Période souhaitée : ${period}`,
     `Langue : ${r.lang}`,
     r.message ? `Message :\n${r.message}` : null,
@@ -106,7 +107,7 @@ export async function notifyNewRequest(r: NewRequestNotification): Promise<void>
   const rows: [string, string][] = [
     ["Nom", r.name],
     ["Téléphone", r.phone],
-    ["Équipement", r.equipmentLabel],
+    [r.equipmentLabels.length > 1 ? "Équipements" : "Équipement", equipmentText],
     ["Période souhaitée", period],
     ["Langue", r.lang],
   ];

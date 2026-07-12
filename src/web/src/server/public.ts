@@ -58,12 +58,12 @@ export const getBrandingFn = createServerFn({ method: "GET" }).handler(
 
 const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
-/** Dates indisponibles d'un équipement (jamais de détails) — pour le calendrier public. */
+/** Dates indisponibles des équipements choisis (union) — pour le calendrier public. */
 export const getUnavailableRangesFn = createServerFn({ method: "GET" })
-  .validator(z.object({ slug: z.string().min(1) }))
+  .validator(z.object({ slugs: z.array(z.string().min(1)).max(50) }))
   .handler(async ({ data }): Promise<{ start: string; end: string }[]> => {
     try {
-      return await (await import("./impl/public")).loadUnavailableRanges(data.slug);
+      return await (await import("./impl/public")).loadUnavailableRanges(data.slugs);
     } catch (err) {
       console.error("getUnavailableRanges :", err);
       return [];
@@ -75,7 +75,7 @@ export const submitReservationRequestFn = createServerFn({ method: "POST" })
     z.object({
       name: z.string().min(1).max(200),
       phone: z.string().min(7).max(30),
-      equipmentSlug: z.string().max(100).nullable(),
+      equipmentSlugs: z.array(z.string().max(100)).max(50),
       startDate: dateStr.nullable(),
       endDate: dateStr.nullable(),
       message: z.string().max(3000).nullable(),

@@ -8,6 +8,7 @@ import {
   hashPassword,
   orderItems,
   orders,
+  reservationRequestItems,
   reservationRequests,
   settings,
   users,
@@ -333,14 +334,14 @@ async function findOrderConflict(
   return conflict;
 }
 
-/** Étiquettes FR des équipements d'un lot (pour des messages d'erreur clairs). */
+/** Étiquettes FR (avec code) des équipements d'un lot, par id. */
 async function equipmentLabels(ids: number[]): Promise<Map<number, string>> {
   if (ids.length === 0) return new Map();
   const rows = await getDb()
-    .select({ id: equipments.id, nameFr: equipments.nameFr })
+    .select({ id: equipments.id, nameFr: equipments.nameFr, code: equipments.code })
     .from(equipments)
     .where(inArray(equipments.id, ids));
-  return new Map(rows.map((r) => [r.id, r.nameFr]));
+  return new Map(rows.map((r) => [r.id, r.code ? `${r.nameFr} (${r.code})` : r.nameFr]));
 }
 
 export async function createOrder(data: OrderInput): Promise<{ ok: boolean; error?: string }> {
@@ -448,8 +449,6 @@ export async function listRequests(): Promise<AdminRequest[]> {
       id: reservationRequests.id,
       name: reservationRequests.name,
       phone: reservationRequests.phone,
-      equipmentId: reservationRequests.equipmentId,
-      equipmentLabel: reservationRequests.equipmentLabel,
       startDate: reservationRequests.startDate,
       endDate: reservationRequests.endDate,
       message: reservationRequests.message,
@@ -461,6 +460,20 @@ export async function listRequests(): Promise<AdminRequest[]> {
     .from(reservationRequests)
     .leftJoin(users, eq(reservationRequests.handledBy, users.id))
     .orderBy(desc(reservationRequests.createdAt));
+  // Équipements demandés (lignes reservation_request_items).
+  const items = await db
+    .select({
+      requestId: reservationRequestItems.requestId,
+      equipmentId: reservationRequestItems.equipmentId,
+      label: reservationRequestItems.equipmentLabel,
+    })
+    .from(reservationRequestItems);
+  const itemsByRequest = new Map<number, AdminRequest["equipments"]>();
+  for (const it of items) {
+    const arr = itemsByRequest.get(it.requestId) ?? [];
+    arr.push({ equipmentId: it.equipmentId, label: it.label });
+    itemsByRequest.set(it.requestId, arr);
+  }
   // Commande issue de chaque demande validée (au plus une en pratique).
   const linked = await db
     .select({ requestId: orders.requestId, orderId: orders.id })
@@ -470,6 +483,7 @@ export async function listRequests(): Promise<AdminRequest[]> {
   return rows.map((r) => ({
     ...r,
     createdAt: r.createdAt.toISOString(),
+    equipments: itemsByRequest.get(r.id) ?? [],
     orderId: orderByRequest.get(r.id) ?? null,
   }));
 }
@@ -525,24 +539,28 @@ export async function updateRequest(
     return { ok: false, error: "La date de fin précède la date de début." };
   }
 
-  // L'étiquette suit l'équipement choisi (ou « Autre / plusieurs » si aucun).
-  let equipmentLabel = "Autre / plusieurs équipements";
-  if (data.equipmentId !== null) {
-    const [equipment] = await db
-      .select({ nameFr: equipments.nameFr, code: equipments.code })
-      .from(equipments)
-      .where(eq(equipments.id, data.equipmentId));
-    if (!equipment) return { ok: false, error: "Équipement introuvable." };
-    equipmentLabel = equipment.code ? `${equipment.nameFr} (${equipment.code})` : equipment.nameFr;
-  }
+  // Libellés figés des équipements choisis (ou « Autre / plusieurs » si aucun).
+  const labels = await equipmentLabels(data.equipmentIds);
+  const newItems =
+    data.equipmentIds.length > 0
+      ? data.equipmentIds.map((id) => ({
+          requestId: data.id,
+          equipmentId: id,
+          equipmentLabel: labels.get(id) ?? "Équipement",
+        }))
+      : [
+          {
+            requestId: data.id,
+            equipmentId: null as number | null,
+            equipmentLabel: "Autre / plusieurs équipements",
+          },
+        ];
 
   await db
     .update(reservationRequests)
     .set({
       name: data.name,
       phone: data.phone,
-      equipmentId: data.equipmentId,
-      equipmentLabel,
       startDate: hasRange ? data.startDate : null,
       endDate: hasRange ? data.endDate : null,
       message: data.message,
@@ -554,6 +572,8 @@ export async function updateRequest(
       updatedAt: sql`now()`,
     })
     .where(eq(reservationRequests.id, data.id));
+  await db.delete(reservationRequestItems).where(eq(reservationRequestItems.requestId, data.id));
+  await db.insert(reservationRequestItems).values(newItems);
   return { ok: true };
 }
 
@@ -571,7 +591,18 @@ export async function validateRequest(id: number): Promise<{ ok: boolean; error?
     .from(reservationRequests)
     .where(eq(reservationRequests.id, id));
   if (!request) return { ok: false, error: "Demande introuvable." };
-  if (!request.equipmentId || !request.startDate || !request.endDate) {
+
+  // Équipements précis demandés (on ignore les lignes « Autre » sans equipmentId).
+  const requestedIds = (
+    await db
+      .select({ equipmentId: reservationRequestItems.equipmentId })
+      .from(reservationRequestItems)
+      .where(eq(reservationRequestItems.requestId, id))
+  )
+    .map((r) => r.equipmentId)
+    .filter((x): x is number => x !== null);
+
+  if (requestedIds.length === 0 || !request.startDate || !request.endDate) {
     return {
       ok: false,
       error:
@@ -579,12 +610,15 @@ export async function validateRequest(id: number): Promise<{ ok: boolean; error?
     };
   }
 
-  const conflict = await findOrderConflict(request.equipmentId, request.startDate, request.endDate);
-  if (conflict) {
-    return {
-      ok: false,
-      error: `Conflit : cet équipement est déjà loué du ${conflict.startDate} au ${conflict.endDate}.`,
-    };
+  const labels = await equipmentLabels(requestedIds);
+  for (const equipmentId of requestedIds) {
+    const conflict = await findOrderConflict(equipmentId, request.startDate, request.endDate);
+    if (conflict) {
+      return {
+        ok: false,
+        error: `Conflit : ${labels.get(equipmentId) ?? "un équipement"} est déjà loué du ${conflict.startDate} au ${conflict.endDate}.`,
+      };
+    }
   }
 
   // Client existant (même téléphone) réutilisé, sinon créé depuis la demande.
@@ -613,7 +647,9 @@ export async function validateRequest(id: number): Promise<{ ok: boolean; error?
       createdBy: me.id,
     })
     .returning({ id: orders.id });
-  await db.insert(orderItems).values({ orderId: order!.id, equipmentId: request.equipmentId });
+  await db
+    .insert(orderItems)
+    .values(requestedIds.map((equipmentId) => ({ orderId: order!.id, equipmentId })));
   await db
     .update(reservationRequests)
     .set({ status: "traitee", handledBy: me.id, handledAt: sql`now()`, updatedAt: sql`now()` })
@@ -812,39 +848,49 @@ const PERIOD_DAYS: Record<Exclude<ReportPeriod, "all">, number> = {
   "12m": 365,
 };
 
-/** Lignes de demandes sur la période, avec la catégorie de l'équipement lié. */
+function periodCondition(period: ReportPeriod) {
+  return period === "all"
+    ? undefined
+    : gte(reservationRequests.createdAt, sql`now() - ${`${PERIOD_DAYS[period]} days`}::interval`);
+}
+
+/** Demandes sur la période (niveau demande — sans équipement). */
 async function requestsInPeriod(period: ReportPeriod) {
-  const db = getDb();
-  const rows = await db
+  return getDb()
     .select({
+      id: reservationRequests.id,
       createdAt: reservationRequests.createdAt,
       name: reservationRequests.name,
       phone: reservationRequests.phone,
-      equipmentLabel: reservationRequests.equipmentLabel,
       startDate: reservationRequests.startDate,
       endDate: reservationRequests.endDate,
       lang: reservationRequests.lang,
       status: reservationRequests.status,
-      categoryName: categories.nameFr,
     })
     .from(reservationRequests)
-    .leftJoin(equipments, eq(reservationRequests.equipmentId, equipments.id))
-    .leftJoin(categories, eq(equipments.categoryId, categories.id))
-    .where(
-      period === "all"
-        ? undefined
-        : gte(
-            reservationRequests.createdAt,
-            sql`now() - ${`${PERIOD_DAYS[period]} days`}::interval`,
-          ),
-    )
+    .where(periodCondition(period))
     .orderBy(desc(reservationRequests.createdAt));
-  return rows;
+}
+
+/** Équipements demandés sur la période (une ligne par équipement demandé). */
+async function requestItemsInPeriod(period: ReportPeriod) {
+  return getDb()
+    .select({
+      requestId: reservationRequestItems.requestId,
+      label: reservationRequestItems.equipmentLabel,
+      categoryName: categories.nameFr,
+    })
+    .from(reservationRequestItems)
+    .innerJoin(reservationRequests, eq(reservationRequestItems.requestId, reservationRequests.id))
+    .leftJoin(equipments, eq(reservationRequestItems.equipmentId, equipments.id))
+    .leftJoin(categories, eq(equipments.categoryId, categories.id))
+    .where(periodCondition(period));
 }
 
 export async function getReport(period: ReportPeriod): Promise<Report> {
   await requireUser("accountant");
   const rows = await requestsInPeriod(period);
+  const items = await requestItemsInPeriod(period);
 
   const STATUSES: RequestStatus[] = ["nouvelle", "en_cours", "traitee", "sans_suite"];
   const byStatus = STATUSES.map((status) => ({
@@ -852,20 +898,21 @@ export async function getReport(period: ReportPeriod): Promise<Report> {
     count: rows.filter((r) => r.status === status).length,
   }));
 
-  const tally = <T extends string>(items: T[]) => {
+  const tally = <T extends string>(list: T[]) => {
     const map = new Map<T, number>();
-    for (const k of items) map.set(k, (map.get(k) ?? 0) + 1);
+    for (const k of list) map.set(k, (map.get(k) ?? 0) + 1);
     return [...map.entries()]
       .map(([key, count]) => ({ key, count }))
       .sort((a, b) => b.count - a.count);
   };
 
-  const byEquipment = tally(rows.map((r) => r.equipmentLabel)).map((e) => ({
+  // Par équipement / catégorie : au niveau des équipements demandés (une demande
+  // peut en viser plusieurs).
+  const byEquipment = tally(items.map((i) => i.label)).map((e) => ({
     label: e.key,
     count: e.count,
   }));
-  // Catégorie : nom de la catégorie de l'équipement, ou « Autre / plusieurs » si sans lien.
-  const byCategory = tally(rows.map((r) => r.categoryName ?? "Autre / plusieurs")).map((c) => ({
+  const byCategory = tally(items.map((i) => i.categoryName ?? "Autre / plusieurs")).map((c) => ({
     name: c.key,
     count: c.count,
   }));
@@ -886,13 +933,20 @@ export async function exportRequestsCsv(
 ): Promise<{ filename: string; csv: string }> {
   await requireUser("accountant");
   const rows = await requestsInPeriod(period);
-  const header = ["Reçue", "Nom", "Téléphone", "Équipement", "Début", "Fin", "Statut", "Langue"];
+  const items = await requestItemsInPeriod(period);
+  const labelsByRequest = new Map<number, string[]>();
+  for (const it of items) {
+    const arr = labelsByRequest.get(it.requestId) ?? [];
+    arr.push(it.label);
+    labelsByRequest.set(it.requestId, arr);
+  }
+  const header = ["Reçue", "Nom", "Téléphone", "Équipements", "Début", "Fin", "Statut", "Langue"];
   const lines = rows.map((r) =>
     [
       r.createdAt.toISOString().slice(0, 10),
       r.name,
       r.phone,
-      r.equipmentLabel,
+      (labelsByRequest.get(r.id) ?? []).join(" ; "),
       r.startDate ?? "",
       r.endDate ?? "",
       r.status,

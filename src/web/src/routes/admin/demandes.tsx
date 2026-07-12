@@ -55,7 +55,7 @@ const STATUS_CLS: Record<RequestStatus, string> = {
 type EditForm = {
   name: string;
   phone: string;
-  equipmentId: number | null;
+  equipmentIds: number[];
   startDate: string;
   endDate: string;
   message: string;
@@ -98,7 +98,8 @@ function RequestsPage() {
     setForm({
       name: r.name,
       phone: r.phone,
-      equipmentId: r.equipmentId,
+      // Seuls les équipements précis (equipmentId non nul) sont pré-cochés.
+      equipmentIds: r.equipments.map((e) => e.equipmentId).filter((x): x is number => x !== null),
       startDate: r.startDate ?? "",
       endDate: r.endDate ?? "",
       message: r.message ?? "",
@@ -119,7 +120,7 @@ function RequestsPage() {
           id,
           name: form.name.trim(),
           phone: form.phone.trim(),
-          equipmentId: form.equipmentId,
+          equipmentIds: form.equipmentIds,
           startDate: form.startDate || null,
           endDate: form.endDate || null,
           message: form.message.trim() || null,
@@ -132,8 +133,8 @@ function RequestsPage() {
   function validate(r: AdminRequest) {
     if (
       !confirm(
-        `Confirmer la demande de ${r.name} (${r.equipmentLabel}, du ${r.startDate} au ${r.endDate}) ?\n` +
-          "Une commande sera créée et l'équipement deviendra indisponible sur cette période.",
+        `Confirmer la demande de ${r.name} (${r.equipments.map((e) => e.label).join(", ")}, du ${r.startDate} au ${r.endDate}) ?\n` +
+          "Une commande sera créée et les équipements deviendront indisponibles sur cette période.",
       )
     )
       return;
@@ -142,6 +143,19 @@ function RequestsPage() {
 
   function patch(p: Partial<EditForm>) {
     setForm((f) => (f ? { ...f, ...p } : f));
+  }
+
+  function toggleEquipment(equipmentId: number) {
+    setForm((f) =>
+      f
+        ? {
+            ...f,
+            equipmentIds: f.equipmentIds.includes(equipmentId)
+              ? f.equipmentIds.filter((x) => x !== equipmentId)
+              : [...f.equipmentIds, equipmentId],
+          }
+        : f,
+    );
   }
 
   function setStatus(r: AdminRequest, status: RequestStatus) {
@@ -153,9 +167,9 @@ function RequestsPage() {
       <h1 className="text-xl font-bold">Demandes de réservation</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Les demandes envoyées par le formulaire public. Après l'appel au client, « Éditer » ajuste
-        l'équipement et les dates convenus (la demande passe « en cours ») ; « Créer la commande »
-        crée alors la commande (client + période) et rend l'équipement indisponible sur ces dates.
-        Le statut évolue tout seul selon vos actions.
+        les équipements et les dates convenus (la demande passe « en cours ») ; « Créer la commande
+        » crée alors la commande (client + période) et rend ces équipements indisponibles sur ces
+        dates. Le statut évolue tout seul selon vos actions.
       </p>
       {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
 
@@ -183,7 +197,9 @@ function RequestsPage() {
             {requests.map((r) => {
               const editing = editingId === r.id && form !== null;
               const canConfirm =
-                r.equipmentId !== null && r.startDate !== null && r.endDate !== null;
+                r.equipments.some((e) => e.equipmentId !== null) &&
+                r.startDate !== null &&
+                r.endDate !== null;
               return (
                 <tr key={r.id} className="border-b border-border/40 align-top last:border-0">
                   <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
@@ -211,26 +227,26 @@ function RequestsPage() {
                             onChange={(e) => patch({ phone: e.target.value })}
                           />
                         </label>
-                        <label className="text-xs text-muted-foreground sm:col-span-2">
-                          Équipement
-                          <select
-                            className={INPUT_CLS}
-                            value={form.equipmentId ?? ""}
-                            disabled={busy}
-                            onChange={(e) =>
-                              patch({
-                                equipmentId: e.target.value === "" ? null : Number(e.target.value),
-                              })
-                            }
-                          >
-                            <option value="">Autre / plusieurs équipements</option>
+                        <div className="text-xs text-muted-foreground sm:col-span-2">
+                          Équipements ({form.equipmentIds.length}){" "}
+                          <span className="text-muted-foreground/70">
+                            — vide = Autre / plusieurs
+                          </span>
+                          <div className="mt-1 grid max-h-40 gap-1 overflow-y-auto rounded-md border border-input bg-background p-2 sm:grid-cols-2">
                             {equipments.map((eq: AdminEquipment) => (
-                              <option key={eq.id} value={eq.id}>
+                              <label key={eq.id} className="flex items-center gap-2 text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={form.equipmentIds.includes(eq.id)}
+                                  disabled={busy}
+                                  onChange={() => toggleEquipment(eq.id)}
+                                  className="h-4 w-4 accent-[var(--primary)]"
+                                />
                                 {eq.code ? `${eq.nameFr} (${eq.code})` : eq.nameFr}
-                              </option>
+                              </label>
                             ))}
-                          </select>
-                        </label>
+                          </div>
+                        </div>
                         <label className="text-xs text-muted-foreground">
                           Début
                           <input
@@ -287,7 +303,7 @@ function RequestsPage() {
                           {r.phone}
                         </span>
                       </td>
-                      <td className="px-4 py-3">{r.equipmentLabel}</td>
+                      <td className="px-4 py-3">{r.equipments.map((e) => e.label).join(", ")}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         {r.startDate ? `${r.startDate} → ${r.endDate}` : "—"}
                       </td>
@@ -392,7 +408,10 @@ function RequestsPage() {
             <div>
               <DetailRow label="Nom" value={viewing.name} />
               <DetailRow label="Téléphone" value={viewing.phone} />
-              <DetailRow label="Équipement" value={viewing.equipmentLabel} />
+              <DetailRow
+                label={viewing.equipments.length > 1 ? "Équipements" : "Équipement"}
+                value={viewing.equipments.map((e) => e.label).join("\n")}
+              />
               <DetailRow
                 label="Période"
                 value={

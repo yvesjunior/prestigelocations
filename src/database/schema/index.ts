@@ -113,11 +113,6 @@ export const reservationRequests = pgTable(
     id: serial("id").primaryKey(),
     name: text("name").notNull(),
     phone: text("phone").notNull(),
-    equipmentId: integer("equipment_id").references(() => equipments.id, {
-      onDelete: "set null",
-    }),
-    // Libellé figé au moment de la demande (les rapports restent justes)
-    equipmentLabel: text("equipment_label").notNull(),
     startDate: date("start_date"),
     endDate: date("end_date"),
     message: text("message"),
@@ -132,6 +127,22 @@ export const reservationRequests = pgTable(
     index("reservation_requests_status_idx").on(t.status),
     index("reservation_requests_created_idx").on(t.createdAt),
   ],
+);
+
+// Équipements demandés (une demande peut en viser plusieurs, même période).
+// equipmentId nullable + libellé figé : les rapports restent justes même si
+// l'équipement est renommé/supprimé (« Autre / plusieurs » = equipmentId null).
+export const reservationRequestItems = pgTable(
+  "reservation_request_items",
+  {
+    id: serial("id").primaryKey(),
+    requestId: integer("request_id")
+      .notNull()
+      .references(() => reservationRequests.id, { onDelete: "cascade" }),
+    equipmentId: integer("equipment_id").references(() => equipments.id, { onDelete: "set null" }),
+    equipmentLabel: text("equipment_label").notNull(),
+  },
+  (t) => [index("reservation_request_items_request_idx").on(t.requestId)],
 );
 
 export const equipmentUnavailabilities = pgTable(

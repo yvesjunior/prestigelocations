@@ -1,12 +1,13 @@
 // Implémentation serveur des lectures publiques — ce fichier n'est importé que
 // dynamiquement depuis les handlers de server functions (jamais côté client).
-import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { getRequestIP } from "@tanstack/react-start/server";
 import {
   categories,
   equipments,
   orderItems,
   orders,
+  reservationRequestItems,
   reservationRequests,
   settings,
 } from "@prestige/database";
@@ -93,21 +94,26 @@ export async function loadPageContent(): Promise<ContentOverrides> {
  * cours). Uniquement des dates — jamais de client, de raison ou de note.
  */
 export async function loadUnavailableRanges(
-  slug: string,
+  slugs: string[],
 ): Promise<{ start: string; end: string }[]> {
+  if (slugs.length === 0) return [];
   const db = getDb();
-  const [equipment] = await db
+  const eqRows = await db
     .select({ id: equipments.id })
     .from(equipments)
-    .where(eq(equipments.slug, slug));
-  if (!equipment) return [];
+    .where(inArray(equipments.slug, slugs));
+  if (eqRows.length === 0) return [];
+  const ids = eqRows.map((e) => e.id);
+  // Union des périodes réservées de TOUS les équipements sélectionnés : une date
+  // est libre seulement si chaque équipement l'est (le calendrier grise donc
+  // toute date réservée par au moins un des équipements).
   const rows = await db
     .select({ start: orders.startDate, end: orders.endDate })
     .from(orderItems)
     .innerJoin(orders, eq(orderItems.orderId, orders.id))
     .where(
       and(
-        eq(orderItems.equipmentId, equipment.id),
+        inArray(orderItems.equipmentId, ids),
         eq(orders.status, "confirmee"),
         gte(orders.endDate, sql`current_date`),
       ),
@@ -119,7 +125,8 @@ export async function loadUnavailableRanges(
 export type RequestSubmission = {
   name: string;
   phone: string;
-  equipmentSlug: string | null;
+  /** Slugs des équipements demandés — vide = « Autre / plusieurs équipements ». */
+  equipmentSlugs: string[];
   startDate: string | null;
   endDate: string | null;
   message: string | null;
@@ -141,40 +148,42 @@ export async function submitReservationRequest(
 
   try {
     const db = getDb();
-    let equipmentId: number | null = null;
-    let equipmentLabel = "Autre / plusieurs équipements";
-    if (data.equipmentSlug) {
-      const [equipment] = await db
-        .select({ id: equipments.id, nameFr: equipments.nameFr, code: equipments.code })
-        .from(equipments)
-        .where(and(eq(equipments.slug, data.equipmentSlug), eq(equipments.published, true)));
-      if (equipment) {
-        equipmentId = equipment.id;
-        equipmentLabel = equipment.code
-          ? `${equipment.nameFr} (${equipment.code})`
-          : equipment.nameFr;
-      }
-    }
+    // Équipements demandés (publiés uniquement), avec libellé figé.
+    const picked =
+      data.equipmentSlugs.length > 0
+        ? await db
+            .select({ id: equipments.id, nameFr: equipments.nameFr, code: equipments.code })
+            .from(equipments)
+            .where(
+              and(inArray(equipments.slug, data.equipmentSlugs), eq(equipments.published, true)),
+            )
+        : [];
+    const items = picked.map((e) => ({
+      equipmentId: e.id,
+      equipmentLabel: e.code ? `${e.nameFr} (${e.code})` : e.nameFr,
+    }));
 
     const hasRange = Boolean(data.startDate && data.endDate);
     if (hasRange && data.endDate! < data.startDate!) {
       return { ok: false, error: "generic" };
     }
-    // Équipement précis → la période est obligatoire (« Autre / plusieurs »
-    // reste libre : pas de calendrier dans ce cas).
-    if (equipmentId !== null && !hasRange) {
+    // Équipement précis → la période est obligatoire.
+    if (items.length > 0 && !hasRange) {
       return { ok: false, error: "dates_required" };
     }
-    // Revalidation serveur : la plage souhaitée ne doit pas chevaucher une
-    // commande confirmée (l'affichage du calendrier peut être périmé).
-    if (equipmentId !== null && hasRange) {
+    // Revalidation serveur : aucun des équipements demandés ne doit chevaucher
+    // une commande confirmée (l'affichage du calendrier peut être périmé).
+    if (items.length > 0 && hasRange) {
       const [clash] = await db
         .select({ id: orders.id })
         .from(orderItems)
         .innerJoin(orders, eq(orderItems.orderId, orders.id))
         .where(
           and(
-            eq(orderItems.equipmentId, equipmentId),
+            inArray(
+              orderItems.equipmentId,
+              items.map((i) => i.equipmentId),
+            ),
             eq(orders.status, "confirmee"),
             lte(orders.startDate, data.endDate!),
             gte(orders.endDate, data.startDate!),
@@ -184,23 +193,36 @@ export async function submitReservationRequest(
       if (clash) return { ok: false, error: "conflict" };
     }
 
-    await db.insert(reservationRequests).values({
-      name: data.name,
-      phone: data.phone,
-      equipmentId,
-      equipmentLabel,
-      startDate: hasRange ? data.startDate : null,
-      endDate: hasRange ? data.endDate : null,
-      message: data.message,
-      lang: data.lang,
-    });
+    const [request] = await db
+      .insert(reservationRequests)
+      .values({
+        name: data.name,
+        phone: data.phone,
+        startDate: hasRange ? data.startDate : null,
+        endDate: hasRange ? data.endDate : null,
+        message: data.message,
+        lang: data.lang,
+      })
+      .returning({ id: reservationRequests.id });
+    // Aucun équipement précis → une ligne « Autre / plusieurs » (demande générale).
+    const rows =
+      items.length > 0
+        ? items.map((i) => ({ requestId: request!.id, ...i }))
+        : [
+            {
+              requestId: request!.id,
+              equipmentId: null,
+              equipmentLabel: "Autre / plusieurs équipements",
+            },
+          ];
+    await db.insert(reservationRequestItems).values(rows);
 
     // Notification best-effort — la demande est déjà enregistrée.
     const { notifyNewRequest } = await import("./email");
     void notifyNewRequest({
       name: data.name,
       phone: data.phone,
-      equipmentLabel,
+      equipmentLabels: rows.map((r) => r.equipmentLabel),
       startDate: hasRange ? data.startDate : null,
       endDate: hasRange ? data.endDate : null,
       message: data.message,
