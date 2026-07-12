@@ -34,7 +34,8 @@ export function CategoriesSection() {
         {categories.map((c) => {
           const visual = visualsBySlug[c.slug] ?? fallbackVisual;
           const items = equipments
-            .filter((e) => e.category === c.slug && e.featured)
+            .filter((e) => e.category === c.slug)
+            .slice(0, 4)
             .map((e) => ({
               label: withCode(e.name[lang], e.code),
               note: statusSuffix(e.status)?.[lang],

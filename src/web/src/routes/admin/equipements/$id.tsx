@@ -1,26 +1,32 @@
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { EquipmentForm } from "@/components/admin/EquipmentForm";
+import { EquipmentAvailability } from "@/components/admin/EquipmentAvailability";
 import {
   deleteEquipmentFn,
   listCategoriesFn,
   listEquipmentsFn,
+  listOrdersFn,
   updateEquipmentFn,
 } from "@/server/admin";
 
 export const Route = createFileRoute("/admin/equipements/$id")({
   head: () => ({ meta: [{ title: "Modifier un équipement | Administration" }] }),
   loader: async ({ params }) => {
-    const [equipments, categories] = await Promise.all([listEquipmentsFn(), listCategoriesFn()]);
+    const [equipments, categories, orders] = await Promise.all([
+      listEquipmentsFn(),
+      listCategoriesFn(),
+      listOrdersFn(),
+    ]);
     const equipment = equipments.find((e) => e.id === Number(params.id));
     if (!equipment) throw notFound();
-    return { equipment, categories };
+    return { equipment, categories, orders };
   },
   component: EditEquipmentPage,
 });
 
 function EditEquipmentPage() {
-  const { equipment, categories } = Route.useLoaderData();
+  const { equipment, categories, orders } = Route.useLoaderData();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +65,10 @@ function EditEquipmentPage() {
             }
           }}
         />
+      </div>
+
+      <div className="mt-10 border-t border-border/60 pt-8">
+        <EquipmentAvailability orders={orders} equipmentId={equipment.id} />
       </div>
     </div>
   );

@@ -41,7 +41,6 @@ export async function loadCatalog(): Promise<CatalogData> {
       formLabel:
         e.formLabelFr && e.formLabelEn ? { fr: e.formLabelFr, en: e.formLabelEn } : undefined,
       status: e.status,
-      featured: e.featured,
       published: e.published,
       imageKey: e.imageKey,
       position: e.position,
@@ -179,23 +178,16 @@ export async function submitReservationRequest(
     });
 
     // Notification best-effort — la demande est déjà enregistrée.
-    const { notifyAdmin } = await import("./email");
-    const period = hasRange ? `du ${data.startDate} au ${data.endDate}` : "période non précisée";
-    void notifyAdmin(
-      `Nouvelle demande de réservation — ${equipmentLabel}`,
-      [
-        `Nom : ${data.name}`,
-        `Téléphone : ${data.phone}`,
-        `Équipement : ${equipmentLabel}`,
-        `Période souhaitée : ${period}`,
-        `Langue : ${data.lang}`,
-        data.message ? `Message :\n${data.message}` : null,
-        "",
-        "À traiter dans l'administration : /admin/demandes",
-      ]
-        .filter((l) => l !== null)
-        .join("\n"),
-    );
+    const { notifyNewRequest } = await import("./email");
+    void notifyNewRequest({
+      name: data.name,
+      phone: data.phone,
+      equipmentLabel,
+      startDate: hasRange ? data.startDate : null,
+      endDate: hasRange ? data.endDate : null,
+      message: data.message,
+      lang: data.lang,
+    });
     return { ok: true };
   } catch (err) {
     console.error("submitReservationRequest :", err);

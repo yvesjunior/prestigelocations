@@ -72,7 +72,6 @@ async function main() {
         formLabelFr: e.formLabel?.fr ?? null,
         formLabelEn: e.formLabel?.en ?? null,
         status: e.status,
-        featured: e.featured,
         published: e.published,
         imageKey: e.imageKey,
         position: e.position,
@@ -87,7 +86,7 @@ async function main() {
           formLabelFr: e.formLabel?.fr ?? null,
           formLabelEn: e.formLabel?.en ?? null,
           updatedAt: sql`now()`,
-          // status, featured, published, image_key, position préservés (gérés via l'admin)
+          // status, published, image_key, position préservés (gérés via l'admin)
         },
       });
   }

@@ -1,17 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { enUS } from "react-day-picker/locale";
 import { Calendar } from "@/components/ui/calendar";
-import { listEquipmentsFn, listOrdersFn, type AdminOrder } from "@/server/admin";
-
-export const Route = createFileRoute("/admin/calendrier")({
-  head: () => ({ meta: [{ title: "Calendrier | Administration" }] }),
-  loader: async () => {
-    const [orders, equipments] = await Promise.all([listOrdersFn(), listEquipmentsFn()]);
-    return { orders, equipments };
-  },
-  component: CalendarPage,
-});
+import type { AdminOrder } from "@/server/admin";
 
 function fromIso(s: string): Date {
   const [y, m, d] = s.split("-").map(Number);
@@ -29,10 +19,19 @@ function statusBadge(o: AdminOrder, today: string): { label: string; cls: string
   return { label: "En cours", cls: "bg-primary/25 text-primary" };
 }
 
-function CalendarPage() {
-  const { orders, equipments } = Route.useLoaderData();
-  const [equipmentId, setEquipmentId] = useState<number>(equipments[0]?.id ?? 0);
-  const [today] = useState(todayIso);
+/**
+ * Calendrier de disponibilité d'un équipement : périodes réservées (commandes
+ * confirmées) surlignées + liste des commandes. En lecture seule — pour bloquer
+ * des dates, créer une commande (Commandes) ou valider une demande (Demandes).
+ */
+export function EquipmentAvailability({
+  orders,
+  equipmentId,
+}: {
+  orders: AdminOrder[];
+  equipmentId: number;
+}) {
+  const today = todayIso();
 
   const equipmentOrders = useMemo(
     () =>
@@ -42,7 +41,6 @@ function CalendarPage() {
     [orders, equipmentId],
   );
 
-  // Périodes réservées (commandes confirmées) → jours surlignés dans le calendrier.
   const booked = useMemo(
     () =>
       equipmentOrders
@@ -51,56 +49,50 @@ function CalendarPage() {
     [equipmentOrders],
   );
 
-  const selectedEquipment = equipments.find((e) => e.id === equipmentId);
+  // Ouvre le calendrier sur la première période réservée encore à venir (sinon
+  // le mois courant) : les jours « réservés » sont ainsi visibles d'emblée,
+  // même quand la réservation est dans un mois futur.
+  const defaultMonth = useMemo(() => {
+    const todayDate = fromIso(today);
+    const upcoming = booked.find((b) => b.to >= todayDate);
+    return upcoming?.from ?? todayDate;
+  }, [booked, today]);
+
+  const hasBooked = booked.length > 0;
 
   return (
-    <div className="max-w-5xl">
-      <h1 className="text-xl font-bold">Calendrier de disponibilité</h1>
+    <div>
+      <h2 className="text-lg font-bold">Disponibilité</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Périodes réservées d'un équipement (issues des commandes confirmées). Pour bloquer des
-        dates, créez une commande dans <span className="text-primary">Commandes</span> ou validez
-        une demande dans <span className="text-primary">Demandes</span>.
+        Périodes réservées (commandes confirmées). Pour bloquer des dates, créez une commande dans{" "}
+        <span className="text-primary">Commandes</span> ou validez une demande dans{" "}
+        <span className="text-primary">Demandes</span>.
       </p>
 
-      <div className="mt-5 max-w-sm">
-        <label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">
-          Équipement
-        </label>
-        <select
-          value={equipmentId}
-          onChange={(e) => setEquipmentId(Number(e.target.value))}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-        >
-          {equipments.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.code ? `${e.nameFr} (${e.code})` : e.nameFr}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-[auto_1fr]">
+      <div className="mt-4 grid gap-6 lg:grid-cols-[auto_1fr]">
         <div className="rounded-xl border border-border/60 bg-card p-4">
           <Calendar
             mode="single"
             selected={undefined}
             onSelect={() => {}}
             locale={enUS}
+            defaultMonth={defaultMonth}
             buttonVariant="outline"
             numberOfMonths={1}
             modifiers={{ booked }}
-            modifiersClassNames={{ booked: "bg-primary/30 text-primary rounded-md" }}
+            modifiersClassNames={{
+              booked: "!bg-primary !text-primary-foreground rounded-md font-semibold",
+            }}
             classNames={{ root: "relative" }}
           />
           <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="inline-block h-3 w-3 rounded bg-primary/30" /> Période réservée
+            <span className="inline-block h-3 w-3 rounded bg-primary" />
+            {hasBooked ? "Période réservée" : "Aucune période réservée"}
           </p>
         </div>
 
         <div className="rounded-xl border border-border/60 bg-card p-5">
-          <p className="text-xs font-semibold tracking-wider text-primary uppercase">
-            Commandes — {selectedEquipment?.nameFr ?? ""}
-          </p>
+          <p className="text-xs font-semibold tracking-wider text-primary uppercase">Commandes</p>
           {equipmentOrders.length === 0 ? (
             <p className="mt-3 text-sm text-muted-foreground">
               Aucune commande pour cet équipement.

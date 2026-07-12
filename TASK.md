@@ -45,8 +45,13 @@
   dette Phase 5).
 - **État Phase 4** : **close** — 4B.1 (auth) · 4B.2 (catalogue) · 4B.3 (demandes) ·
   4B.4 (calendrier) · 4B.5 (rapports) · 4B.6 (thème) tous faits et vérifiés en Docker.
-- **🧍 En attente client** : compte SMTP (courriels de demandes), domaine (Phase 5),
-  validation contenu/photos réelles (Phase 6).
+- **🧍 En attente client** : domaine (Phase 5), validation contenu/photos réelles (Phase 6).
+- **📧 Courriels = SendGrid (API HTTP)** — implémenté et vérifié bout en bout (demande →
+  courriel HTML+texte, best-effort). Env : `SENDGRID_API_KEY` + `SENDGRID_FROM`.
+  **TODO expéditeur** : `SENDGRID_FROM` est provisoirement `kiwanoinc@gmail.com` (Single
+  Sender de test). **À faire avant la prod** : authentifier le **domaine Prestige** dans
+  SendGrid (SPF/DKIM) et régler `SENDGRID_FROM=no-reply@<domaine>` — un expéditeur
+  `@gmail`/`@outlook` passe « via sendgrid.net » et risque le spam. Dépend du domaine (Phase 5).
 
 ## État actuel
 

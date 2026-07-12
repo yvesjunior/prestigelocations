@@ -14,7 +14,6 @@ export interface EquipmentFormValues {
   formLabelEn: string | null;
   status: "disponible" | "bientot" | "sur_demande";
   imageKey: string | null;
-  featured: boolean;
   published: boolean;
   position: number;
 }
@@ -59,7 +58,6 @@ export function EquipmentForm({
     formLabelEn: initial.formLabelEn ?? null,
     status: initial.status ?? "disponible",
     imageKey: initial.imageKey ?? null,
-    featured: initial.featured ?? false,
     published: initial.published ?? true,
     position: initial.position ?? 0,
   });
@@ -201,15 +199,6 @@ export function EquipmentForm({
       </div>
 
       <div className="flex flex-wrap gap-6">
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={v.featured}
-            onChange={(e) => set("featured", e.target.checked)}
-            className="h-4 w-4 accent-[var(--primary)]"
-          />
-          Mis en avant sur l'accueil
-        </label>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"

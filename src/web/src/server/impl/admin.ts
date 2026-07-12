@@ -34,6 +34,7 @@ import type {
   OrderInput,
   Report,
   ReportPeriod,
+  RequestEditInput,
   RequestStatus,
 } from "../admin";
 
@@ -65,7 +66,6 @@ export async function listEquipments(): Promise<AdminEquipment[]> {
       formLabelEn: equipments.formLabelEn,
       status: equipments.status,
       imageKey: equipments.imageKey,
-      featured: equipments.featured,
       published: equipments.published,
       position: equipments.position,
     })
@@ -272,6 +272,8 @@ export async function listOrders(): Promise<AdminOrder[]> {
       customerId: orders.customerId,
       customerName: customers.name,
       customerPhone: customers.phone,
+      customerEmail: customers.email,
+      customerNote: customers.note,
       equipmentId: orders.equipmentId,
       equipmentName: equipments.nameFr,
       equipmentCode: equipments.code,
@@ -416,6 +418,77 @@ export async function updateRequestStatus(data: {
   await getDb()
     .update(reservationRequests)
     .set({ status: data.status, handledBy: me.id, handledAt: sql`now()`, updatedAt: sql`now()` })
+    .where(eq(reservationRequests.id, data.id));
+  return { ok: true };
+}
+
+/**
+ * Édite une demande selon ce qui a été convenu par téléphone, avant sa
+ * conversion en commande. Met à jour l'étiquette d'équipement pour rester
+ * cohérente avec l'équipement choisi. Refuse si la demande est déjà convertie
+ * (dans ce cas, modifier la commande depuis Commandes).
+ */
+export async function updateRequest(
+  data: RequestEditInput,
+): Promise<{ ok: boolean; error?: string }> {
+  const me = await requireUser("admin");
+  const db = getDb();
+  const [request] = await db
+    .select({ id: reservationRequests.id })
+    .from(reservationRequests)
+    .where(eq(reservationRequests.id, data.id));
+  if (!request) return { ok: false, error: "Demande introuvable." };
+
+  // Une demande déjà convertie en commande n'est plus modifiable ici.
+  const [linkedOrder] = await db
+    .select({ id: orders.id })
+    .from(orders)
+    .where(eq(orders.requestId, data.id))
+    .limit(1);
+  if (linkedOrder) {
+    return {
+      ok: false,
+      error: "Demande déjà convertie en commande — modifiez la commande depuis Commandes.",
+    };
+  }
+
+  // Cohérence des dates : les deux ou aucune, et fin ≥ début.
+  const hasRange = Boolean(data.startDate && data.endDate);
+  if (Boolean(data.startDate) !== Boolean(data.endDate)) {
+    return { ok: false, error: "Renseignez les deux dates (début et fin) ou aucune." };
+  }
+  if (hasRange && data.endDate! < data.startDate!) {
+    return { ok: false, error: "La date de fin précède la date de début." };
+  }
+
+  // L'étiquette suit l'équipement choisi (ou « Autre / plusieurs » si aucun).
+  let equipmentLabel = "Autre / plusieurs équipements";
+  if (data.equipmentId !== null) {
+    const [equipment] = await db
+      .select({ nameFr: equipments.nameFr, code: equipments.code })
+      .from(equipments)
+      .where(eq(equipments.id, data.equipmentId));
+    if (!equipment) return { ok: false, error: "Équipement introuvable." };
+    equipmentLabel = equipment.code ? `${equipment.nameFr} (${equipment.code})` : equipment.nameFr;
+  }
+
+  await db
+    .update(reservationRequests)
+    .set({
+      name: data.name,
+      phone: data.phone,
+      equipmentId: data.equipmentId,
+      equipmentLabel,
+      startDate: hasRange ? data.startDate : null,
+      endDate: hasRange ? data.endDate : null,
+      message: data.message,
+      // Éditer une demande = commencer à la traiter → passe « en cours »
+      // (le statut n'est jamais réglé à la main ; il découle des actions).
+      status: "en_cours",
+      handledBy: me.id,
+      handledAt: sql`now()`,
+      updatedAt: sql`now()`,
+    })
     .where(eq(reservationRequests.id, data.id));
   return { ok: true };
 }

@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { listEquipmentsFn, updateEquipmentFn } from "@/server/admin";
+import { iconActionCls } from "@/components/admin/action-icons";
 
 export const Route = createFileRoute("/admin/equipements/")({
   head: () => ({ meta: [{ title: "Équipements | Administration" }] }),
@@ -40,7 +41,6 @@ function EquipmentListPage() {
               <th className="px-4 py-3">Code</th>
               <th className="px-4 py-3">Catégorie</th>
               <th className="px-4 py-3">Statut</th>
-              <th className="px-4 py-3">Accueil</th>
               <th className="px-4 py-3">Publié</th>
               <th className="px-4 py-3">Ordre</th>
               <th className="px-4 py-3" />
@@ -63,7 +63,6 @@ function EquipmentListPage() {
                     {STATUS_LABEL[e.status]}
                   </span>
                 </td>
-                <td className="px-4 py-3">{e.featured ? "★" : "—"}</td>
                 <td className="px-4 py-3">
                   <button
                     onClick={() => togglePublished(e.id, !e.published)}
@@ -82,9 +81,11 @@ function EquipmentListPage() {
                   <Link
                     to="/admin/equipements/$id"
                     params={{ id: String(e.id) }}
-                    className="text-primary hover:underline"
+                    title="Modifier l'équipement"
+                    className={`inline-flex ${iconActionCls.edit}`}
                   >
-                    Modifier
+                    <Pencil className="h-4 w-4" />
+                    <span className="sr-only">Modifier</span>
                   </Link>
                 </td>
               </tr>

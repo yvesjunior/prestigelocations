@@ -24,7 +24,6 @@ export type AdminEquipment = {
   formLabelEn: string | null;
   status: "disponible" | "bientot" | "sur_demande";
   imageKey: string | null;
-  featured: boolean;
   published: boolean;
   position: number;
 };
@@ -66,6 +65,8 @@ export type AdminOrder = {
   customerId: number;
   customerName: string;
   customerPhone: string;
+  customerEmail: string | null;
+  customerNote: string | null;
   equipmentId: number;
   equipmentName: string;
   equipmentCode: string | null;
@@ -119,7 +120,6 @@ const equipmentInput = z.object({
   formLabelEn: z.string().nullable(),
   status: z.enum(["disponible", "bientot", "sur_demande"]),
   imageKey: z.string().nullable(),
-  featured: z.boolean(),
   published: z.boolean(),
   position: z.number().int().min(0),
 });
@@ -254,6 +254,28 @@ export const updateRequestStatusFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> =>
     (await import("./impl/admin")).updateRequestStatus(data),
+  );
+
+// Édition d'une demande (après l'appel téléphonique) : l'équipement, les dates
+// et le message sont ajustés selon ce qui a été convenu, avant la conversion en
+// commande. equipmentId null = « Autre / plusieurs équipements » ; dates nulles
+// = période non précisée (la conversion reste alors bloquée tant qu'elles
+// manquent).
+const requestEditInput = z.object({
+  id: z.number().int(),
+  name: z.string().min(1),
+  phone: z.string().min(7),
+  equipmentId: z.number().int().nullable(),
+  startDate: dateStr.nullable(),
+  endDate: dateStr.nullable(),
+  message: z.string().nullable(),
+});
+export type RequestEditInput = z.infer<typeof requestEditInput>;
+
+export const updateRequestFn = createServerFn({ method: "POST" })
+  .validator(requestEditInput)
+  .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> =>
+    (await import("./impl/admin")).updateRequest(data),
   );
 
 export const validateRequestFn = createServerFn({ method: "POST" })

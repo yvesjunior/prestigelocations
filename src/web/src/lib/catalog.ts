@@ -30,7 +30,6 @@ export interface CatalogEquipment {
   /** Libellé du menu du formulaire de contact (sinon le nom est utilisé). */
   formLabel?: Localized;
   status: EquipmentStatus;
-  featured: boolean;
   published: boolean;
   imageKey: string | null;
   position: number;
@@ -119,7 +118,6 @@ export const catalogEquipments: CatalogEquipment[] = [
     name: { fr: "Mini-pelle", en: "Mini excavator" },
     detail: { fr: "Mini-pelle (excavatrice compacte)", en: "Mini excavator (compact excavator)" },
     status: "disponible",
-    featured: true,
     published: true,
     imageKey: null,
     position: 0,
@@ -134,7 +132,6 @@ export const catalogEquipments: CatalogEquipment[] = [
       en: "Compact tractor with attachments",
     },
     status: "disponible",
-    featured: true,
     published: true,
     imageKey: null,
     position: 1,
@@ -145,7 +142,6 @@ export const catalogEquipments: CatalogEquipment[] = [
     category: "machinerie",
     name: { fr: "Plateforme élévatrice", en: "Aerial lift" },
     status: "bientot",
-    featured: true,
     published: true,
     imageKey: null,
     position: 2,
@@ -156,7 +152,6 @@ export const catalogEquipments: CatalogEquipment[] = [
     category: "machinerie",
     name: { fr: "Godets et accessoires variés", en: "Buckets and various attachments" },
     status: "disponible",
-    featured: false,
     published: true,
     imageKey: null,
     position: 3,
@@ -172,7 +167,6 @@ export const catalogEquipments: CatalogEquipment[] = [
       en: "Dump trailer — ideal for soil, stone and debris",
     },
     status: "disponible",
-    featured: true,
     published: true,
     imageKey: null,
     position: 0,
@@ -187,7 +181,6 @@ export const catalogEquipments: CatalogEquipment[] = [
       en: "Enclosed trailer — protect your cargo from the weather",
     },
     status: "disponible",
-    featured: true,
     published: true,
     imageKey: null,
     position: 1,
@@ -202,7 +195,6 @@ export const catalogEquipments: CatalogEquipment[] = [
       en: "Flatbed trailer — for vehicles and machinery",
     },
     status: "disponible",
-    featured: true,
     published: true,
     imageKey: null,
     position: 2,
@@ -213,7 +205,6 @@ export const catalogEquipments: CatalogEquipment[] = [
     category: "remorques",
     name: { fr: "Attaches et accessoires de remorquage", en: "Hitches and towing accessories" },
     status: "disponible",
-    featured: false,
     published: true,
     imageKey: null,
     position: 3,
@@ -227,7 +218,6 @@ export const catalogEquipments: CatalogEquipment[] = [
     detail: { fr: "Compacteurs à plaque vibrante", en: "Vibrating plate compactors" },
     formLabel: { fr: "Compacteur", en: "Compactor" },
     status: "disponible",
-    featured: true,
     published: true,
     imageKey: null,
     position: 0,
@@ -239,7 +229,6 @@ export const catalogEquipments: CatalogEquipment[] = [
     name: { fr: "Scies à béton", en: "Concrete saws" },
     formLabel: { fr: "Scie à béton", en: "Concrete saw" },
     status: "disponible",
-    featured: true,
     published: true,
     imageKey: null,
     position: 1,
@@ -251,7 +240,6 @@ export const catalogEquipments: CatalogEquipment[] = [
     name: { fr: "Marteaux-piqueurs", en: "Jackhammers" },
     formLabel: { fr: "Marteau-piqueur", en: "Jackhammer" },
     status: "disponible",
-    featured: true,
     published: true,
     imageKey: null,
     position: 2,
@@ -262,7 +250,6 @@ export const catalogEquipments: CatalogEquipment[] = [
     category: "petits-equipements",
     name: { fr: "Outillage spécialisé", en: "Specialized tools" },
     status: "sur_demande",
-    featured: false,
     published: true,
     imageKey: null,
     position: 3,

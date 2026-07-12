@@ -77,7 +77,6 @@ export const equipments = pgTable(
     formLabelEn: text("form_label_en"),
     status: equipmentStatus("status").notNull().default("disponible"),
     imageKey: text("image_key"),
-    featured: boolean("featured").notNull().default(false),
     published: boolean("published").notNull().default(true),
     position: integer("position").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

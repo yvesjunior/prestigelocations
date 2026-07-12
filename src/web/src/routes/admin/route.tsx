@@ -7,7 +7,6 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import {
-  CalendarDays,
   BarChart3,
   ClipboardList,
   FileText,
@@ -52,7 +51,6 @@ const NAV: NavItem[] = [
   { to: "/admin/commandes", label: "Commandes", icon: ClipboardList },
   { to: "/admin/rapports", label: "Rapports", icon: BarChart3 },
   { to: "/admin/pages", label: "Pages", icon: FileText },
-  { to: "/admin/calendrier", label: "Calendrier", icon: CalendarDays },
   { to: "/admin/parametres", label: "Paramètres", icon: Settings },
   { to: "/admin/employes", label: "Employés & rôles", icon: Users, adminOnly: true },
   { to: "/admin/mon-compte", label: "Mon compte", icon: UserCircle },

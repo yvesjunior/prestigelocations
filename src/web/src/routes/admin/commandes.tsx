@@ -1,5 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
+import { Ban, Eye, Pencil, RotateCcw } from "lucide-react";
 import {
   createCustomerFn,
   createOrderFn,
@@ -9,6 +10,23 @@ import {
   updateOrderFn,
   type AdminOrder,
 } from "@/server/admin";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { iconActionCls } from "@/components/admin/action-icons";
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid grid-cols-[120px_1fr] gap-2 border-b border-border/40 py-2 last:border-0">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-sm whitespace-pre-wrap">{value}</span>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/admin/commandes")({
   head: () => ({ meta: [{ title: "Commandes | Administration" }] }),
@@ -58,6 +76,7 @@ function OrdersPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [today] = useState(todayIso);
+  const [viewing, setViewing] = useState<AdminOrder | null>(null);
 
   const set = <K extends keyof typeof EMPTY_FORM>(key: K, value: (typeof EMPTY_FORM)[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -143,6 +162,8 @@ function OrdersPage() {
       note: o.note ?? "",
     });
     setError(null);
+    setViewing(null);
+    document.getElementById("order-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function cancelOrder(o: AdminOrder) {
@@ -214,32 +235,53 @@ function OrdersPage() {
                     {o.note ?? ""}
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
-                    {o.status === "confirmee" ? (
-                      <>
-                        <button
-                          disabled={busy}
-                          onClick={() => startEdit(o)}
-                          className="text-xs text-primary hover:underline"
-                        >
-                          Modifier
-                        </button>
-                        <button
-                          disabled={busy}
-                          onClick={() => cancelOrder(o)}
-                          className="ml-3 text-xs text-destructive hover:underline"
-                        >
-                          Annuler
-                        </button>
-                      </>
-                    ) : (
+                    <div className="flex items-center justify-end gap-1">
                       <button
+                        type="button"
+                        title="Voir la commande"
                         disabled={busy}
-                        onClick={() => reactivateOrder(o)}
-                        className="text-xs text-primary hover:underline"
+                        onClick={() => setViewing(o)}
+                        className={iconActionCls.view}
                       >
-                        Réactiver
+                        <Eye className="h-4 w-4" />
+                        <span className="sr-only">Voir</span>
                       </button>
-                    )}
+                      {o.status === "confirmee" ? (
+                        <>
+                          <button
+                            type="button"
+                            title="Modifier la commande"
+                            disabled={busy}
+                            onClick={() => startEdit(o)}
+                            className={iconActionCls.edit}
+                          >
+                            <Pencil className="h-4 w-4" />
+                            <span className="sr-only">Modifier</span>
+                          </button>
+                          <button
+                            type="button"
+                            title="Annuler la commande"
+                            disabled={busy}
+                            onClick={() => cancelOrder(o)}
+                            className={iconActionCls.danger}
+                          >
+                            <Ban className="h-4 w-4" />
+                            <span className="sr-only">Annuler</span>
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          title="Réactiver la commande"
+                          disabled={busy}
+                          onClick={() => reactivateOrder(o)}
+                          className={iconActionCls.positive}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                          <span className="sr-only">Réactiver</span>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );
@@ -248,7 +290,11 @@ function OrdersPage() {
         </table>
       </div>
 
-      <form onSubmit={onSubmit} className="mt-8 rounded-xl border border-border/60 bg-card p-5">
+      <form
+        id="order-form"
+        onSubmit={onSubmit}
+        className="mt-8 rounded-xl border border-border/60 bg-card p-5"
+      >
         <p className="text-sm font-bold">
           {editing
             ? `Modifier la commande — ${editing.equipmentName} pour ${editing.customerName}`
@@ -383,6 +429,34 @@ function OrdersPage() {
           )}
         </div>
       </form>
+
+      <Dialog open={viewing !== null} onOpenChange={(o) => !o && setViewing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Commande</DialogTitle>
+            <DialogDescription>{viewing && statusBadge(viewing, today).label}</DialogDescription>
+          </DialogHeader>
+          {viewing && (
+            <div>
+              <DetailRow
+                label="Équipement"
+                value={
+                  viewing.equipmentCode
+                    ? `${viewing.equipmentName} (${viewing.equipmentCode})`
+                    : viewing.equipmentName
+                }
+              />
+              <DetailRow label="Client" value={viewing.customerName} />
+              <DetailRow label="Téléphone" value={viewing.customerPhone} />
+              <DetailRow label="Courriel" value={viewing.customerEmail || "—"} />
+              <DetailRow label="Note client" value={viewing.customerNote || "—"} />
+              <DetailRow label="Période" value={`${viewing.startDate} → ${viewing.endDate}`} />
+              <DetailRow label="Statut" value={statusBadge(viewing, today).label} />
+              <DetailRow label="Note commande" value={viewing.note || "—"} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
+import { Trash2 } from "lucide-react";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { iconActionCls } from "@/components/admin/action-icons";
 import {
   createCategoryFn,
   deleteCategoryFn,
@@ -64,11 +66,13 @@ function CategoryEditor({ category }: { category: AdminCategory }) {
         <p className="text-sm font-bold tracking-wider text-primary uppercase">{category.slug}</p>
         <button
           type="button"
+          title="Supprimer la catégorie"
           disabled={busy}
           onClick={remove}
-          className="text-xs text-destructive hover:underline"
+          className={iconActionCls.danger}
         >
-          Supprimer
+          <Trash2 className="h-4 w-4" />
+          <span className="sr-only">Supprimer</span>
         </button>
       </div>
       {deleteError && <p className="mt-2 text-sm text-destructive">{deleteError}</p>}

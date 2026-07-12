@@ -1,6 +1,8 @@
 import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
+import { KeyRound } from "lucide-react";
 import { createUserFn, updateUserFn, type AdminUser } from "@/server/admin";
+import { iconActionCls } from "@/components/admin/action-icons";
 
 const ROLE_MATRIX = [
   { role: "admin", desc: "Tout : catalogue, pages, paramètres, comptes employés." },
@@ -155,10 +157,12 @@ export function UserSettings({ users, meId }: { users: AdminUser[]; meId: number
                 <td className="px-4 py-3 text-right">
                   <button
                     disabled={busy}
+                    title="Réinitialiser le mot de passe"
                     onClick={() => resetPassword(u.id)}
-                    className="text-xs text-primary hover:underline"
+                    className={iconActionCls.neutral}
                   >
-                    Réinitialiser le mot de passe
+                    <KeyRound className="h-4 w-4" />
+                    <span className="sr-only">Réinitialiser le mot de passe</span>
                   </button>
                 </td>
               </tr>

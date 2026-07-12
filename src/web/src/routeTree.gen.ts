@@ -36,7 +36,6 @@ import { Route as AdminEmployesRouteImport } from './routes/admin/employes'
 import { Route as AdminDemandesRouteImport } from './routes/admin/demandes'
 import { Route as AdminCommandesRouteImport } from './routes/admin/commandes'
 import { Route as AdminCategoriesRouteImport } from './routes/admin/categories'
-import { Route as AdminCalendrierRouteImport } from './routes/admin/calendrier'
 import { Route as AdminEquipementsIndexRouteImport } from './routes/admin/equipements/index'
 import { Route as FrEquipementsSlugRouteImport } from './routes/fr/equipements_.$slug'
 import { Route as EnEquipmentSlugRouteImport } from './routes/en/equipment_.$slug'
@@ -178,11 +177,6 @@ const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const AdminCalendrierRoute = AdminCalendrierRouteImport.update({
-  id: '/calendrier',
-  path: '/calendrier',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
 const AdminEquipementsIndexRoute = AdminEquipementsIndexRouteImport.update({
   id: '/equipements/',
   path: '/equipements/',
@@ -217,7 +211,6 @@ export interface FileRoutesByFullPath {
   '/equipements': typeof EquipementsRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/admin/calendrier': typeof AdminCalendrierRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/commandes': typeof AdminCommandesRoute
   '/admin/demandes': typeof AdminDemandesRoute
@@ -251,7 +244,6 @@ export interface FileRoutesByTo {
   '/equipements': typeof EquipementsRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/admin/calendrier': typeof AdminCalendrierRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/commandes': typeof AdminCommandesRoute
   '/admin/demandes': typeof AdminDemandesRoute
@@ -287,7 +279,6 @@ export interface FileRoutesById {
   '/equipements': typeof EquipementsRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/admin/calendrier': typeof AdminCalendrierRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/commandes': typeof AdminCommandesRoute
   '/admin/demandes': typeof AdminDemandesRoute
@@ -324,7 +315,6 @@ export interface FileRouteTypes {
     | '/equipements'
     | '/services'
     | '/sitemap.xml'
-    | '/admin/calendrier'
     | '/admin/categories'
     | '/admin/commandes'
     | '/admin/demandes'
@@ -358,7 +348,6 @@ export interface FileRouteTypes {
     | '/equipements'
     | '/services'
     | '/sitemap.xml'
-    | '/admin/calendrier'
     | '/admin/categories'
     | '/admin/commandes'
     | '/admin/demandes'
@@ -393,7 +382,6 @@ export interface FileRouteTypes {
     | '/equipements'
     | '/services'
     | '/sitemap.xml'
-    | '/admin/calendrier'
     | '/admin/categories'
     | '/admin/commandes'
     | '/admin/demandes'
@@ -634,13 +622,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCategoriesRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/admin/calendrier': {
-      id: '/admin/calendrier'
-      path: '/calendrier'
-      fullPath: '/admin/calendrier'
-      preLoaderRoute: typeof AdminCalendrierRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
     '/admin/equipements/': {
       id: '/admin/equipements/'
       path: '/equipements'
@@ -680,7 +661,6 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteRouteChildren {
-  AdminCalendrierRoute: typeof AdminCalendrierRoute
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCommandesRoute: typeof AdminCommandesRoute
   AdminDemandesRoute: typeof AdminDemandesRoute
@@ -697,7 +677,6 @@ interface AdminRouteRouteChildren {
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
-  AdminCalendrierRoute: AdminCalendrierRoute,
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCommandesRoute: AdminCommandesRoute,
   AdminDemandesRoute: AdminDemandesRoute,

@@ -50,7 +50,8 @@ function DashboardPage() {
         ))}
       </div>
       <p className="mt-8 text-sm text-muted-foreground">
-        Le calendrier de disponibilités (vue mensuelle) arrive dans une prochaine itération.
+        La disponibilité (calendrier des périodes réservées) s'affiche sur la fiche de chaque
+        équipement.
       </p>
     </div>
   );
