@@ -43,10 +43,10 @@ export function Footer() {
             <img
               src={logo}
               alt="Logo Prestige Locations"
-              width={512}
-              height={512}
+              width={454}
+              height={264}
               loading="lazy"
-              className="h-14 w-14 object-contain"
+              className="h-12 w-auto object-contain"
             />
             <span className="leading-tight">
               <span className="block font-serif text-xl font-bold tracking-[0.08em] text-primary">

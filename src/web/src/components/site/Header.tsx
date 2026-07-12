@@ -58,9 +58,9 @@ export function Header() {
           <img
             src={logo}
             alt="Logo Prestige Locations"
-            width={512}
-            height={512}
-            className="h-12 w-12 object-contain"
+            width={454}
+            height={264}
+            className="h-11 w-auto object-contain"
           />
           <span className="leading-tight">
             <span className="block font-serif text-lg font-bold tracking-[0.08em] text-primary">
