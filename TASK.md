@@ -30,28 +30,35 @@
 
 > **Reprendre ici.** Mettre à jour ce bloc à chaque session (2 lignes max).
 
-- **▶ PHASE 4 TERMINÉE (2026-07-11)** — 4B.1→4B.6 tous faits et vérifiés en Docker.
+- **▶ PHASES 1–4 TERMINÉES ; Phase 4+ enrichie (session 2026-07-12).**
   **PROCHAINE ÉTAPE : Phase 5 — Hébergement** : scripts `scripts/*.sh`,
   `docker-compose.prod.yml` + `Caddyfile` (TLS Let's Encrypt), `infra/README.md`, et régler
   la dette « migrations + seed automatiques au démarrage du conteneur ». **Bloquée 🧍** :
   domaine (avec le client) + accès SSH au serveur. Faisable sans blocage : écrire les
-  scripts et le compose prod « à blanc » en attendant les infos serveur.
-- **Session 2026-07-11 commitée sur `develop`** : `4a8f80c` (gros lot : rôles simplifiés,
-  CRUD catégories + photos, ImageKit, page maintenance, téléphone 100 % BD,
-  `customers`+`orders`, pages publiques de catégories, demandes 4B.3, code équipement ;
-  migrations `0001`→`0004`) puis `5499baa` (fix calendrier contact). **⚠️ Pas encore
-  poussé** — attend 🧍 les droits GitHub pour `yvesbat`. `image.png` (maquette) non suivi.
-  **Après un checkout neuf : `npm run db:setup`** (migrations + seed pas auto au boot —
-  dette Phase 5).
+  scripts et le compose prod « à blanc ». *(Alternative sans blocage : Phase 6 faisable dès
+  maintenant — og:image + passe accessibilité/mobile ; le reste attend 🧍 le client.)*
+- **Session 2026-07-12 sur `develop` — ⚠️ NON POUSSÉE** (attend 🧍 droits GitHub `yvesbat`).
+  7 commits `1749ff1`→`07f69a0` (au-dessus de `ba3a123`) : (1) **SendGrid** + workflow
+  **demande → édition → commande** + statut piloté par actions ; (2) **logo de marque
+  éditable** (en-tête/pied/favicon, Paramètres › Logo, ImageKit) ; (3) **plusieurs
+  équipements par commande** (`order_items`, migr `0006`) ; (4) **plusieurs équipements par
+  demande + calendrier combiné** — grise une date si AU MOINS un équipement est pris
+  (`reservation_request_items`, migr `0007`) ; (5) **combobox multi-select recherchable**
+  (`components/ui/multi-select.tsx`) partout ; (6) **prix/jour optionnel par équipement +
+  interrupteur Paramètres › Tarifs** (`daily_price_cents`, migr `0008`). Icônes d'action
+  colorées partagées ; calendrier de dispo déplacé sur la fiche équipement ; drapeau
+  `featured` supprimé. Migrations à jour → `0008`. **Après checkout neuf : `npm run db:setup`.**
+  `image.png` (maquette) non suivi.
 - **État Phase 4** : **close** — 4B.1 (auth) · 4B.2 (catalogue) · 4B.3 (demandes) ·
-  4B.4 (calendrier) · 4B.5 (rapports) · 4B.6 (thème) tous faits et vérifiés en Docker.
-- **🧍 En attente client** : domaine (Phase 5), validation contenu/photos réelles (Phase 6).
-- **📧 Courriels = SendGrid (API HTTP)** — implémenté et vérifié bout en bout (demande →
-  courriel HTML+texte, best-effort). Env : `SENDGRID_API_KEY` + `SENDGRID_FROM`.
-  **TODO expéditeur** : `SENDGRID_FROM` est provisoirement `kiwanoinc@gmail.com` (Single
-  Sender de test). **À faire avant la prod** : authentifier le **domaine Prestige** dans
-  SendGrid (SPF/DKIM) et régler `SENDGRID_FROM=no-reply@<domaine>` — un expéditeur
-  `@gmail`/`@outlook` passe « via sendgrid.net » et risque le spam. Dépend du domaine (Phase 5).
+  4B.4 (calendrier) · 4B.5 (rapports) · 4B.6 (thème).
+- **🧍 En attente client** : domaine (Phase 5), validation contenu/photos réelles + liens
+  Facebook/Instagram + zone/adresse (Phase 6).
+- **📧 SendGrid (API HTTP)** — implémenté + vérifié. Env : `SENDGRID_API_KEY` + `SENDGRID_FROM`.
+  ⚠️ `SENDGRID_FROM` provisoire = `kiwanoinc@gmail.com` ; le compte n'a **plus de Single
+  Sender vérifié** (un test l'a défait) → **re-vérifier un expéditeur avant tout envoi réel**.
+  TODO prod : authentifier le domaine Prestige (SPF/DKIM) + `SENDGRID_FROM=no-reply@<domaine>`.
+- **🧹 BD dev** : données de test accumulées (demandes/commandes #5–8, prix Mini-pelle 85 $,
+  réglages `pricing`/`branding` testés) — purger via re-seed si gênant (`npm run db:setup`).
 
 ## État actuel
 
