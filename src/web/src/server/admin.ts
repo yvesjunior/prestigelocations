@@ -8,6 +8,8 @@ import { contactInfoSchema, type ContactInfo } from "@/lib/contact";
 import { contentOverridesSchema, type ContentOverrides } from "@/lib/content";
 import { brandingSchema, type Branding } from "@/lib/branding";
 import { pricingSchema, type Pricing } from "@/lib/pricing";
+import { heroSchema, type Hero } from "@/lib/hero";
+import { aboutSchema, type About } from "@/lib/about";
 
 // ---------------------------------------------------------------- types
 
@@ -42,6 +44,8 @@ export type AdminCategory = {
   pageDescriptionEn: string;
   ctaFr: string;
   ctaEn: string;
+  bulletsFr: string[];
+  bulletsEn: string[];
   imageKey: string | null;
   position: number;
 };
@@ -136,14 +140,22 @@ const categoryInput = z.object({
   pageDescriptionEn: z.string().min(1),
   ctaFr: z.string().min(1),
   ctaEn: z.string().min(1),
+  // Points forts (texte libre) — lignes vides ignorées côté serveur.
+  bulletsFr: z.array(z.string().min(1)).max(20),
+  bulletsEn: z.array(z.string().min(1)).max(20),
   imageKey: z.string().nullable(),
   position: z.number().int().min(0),
 });
 export type CategoryInput = z.infer<typeof categoryInput>;
 
 // Création : le slug est généré du nom FR, la position ajoutée en fin de liste,
-// la photo se téléverse ensuite depuis la fiche.
-const categoryCreateInput = categoryInput.omit({ position: true, imageKey: true });
+// la photo et les points forts s'ajoutent ensuite depuis la fiche.
+const categoryCreateInput = categoryInput.omit({
+  position: true,
+  imageKey: true,
+  bulletsFr: true,
+  bulletsEn: true,
+});
 export type CategoryCreateInput = z.infer<typeof categoryCreateInput>;
 
 const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date au format AAAA-MM-JJ");
@@ -395,3 +407,23 @@ export const getPricingForAdminFn = createServerFn({ method: "GET" }).handler(
 export const updatePricingFn = createServerFn({ method: "POST" })
   .validator(pricingSchema)
   .handler(async ({ data }) => (await import("./impl/admin")).updatePricing(data));
+
+// ---------------------------------------------------------------- diaporama accueil
+
+export const getHeroForAdminFn = createServerFn({ method: "GET" }).handler(
+  async (): Promise<Hero> => (await import("./impl/admin")).getHeroForAdmin(),
+);
+
+export const updateHeroFn = createServerFn({ method: "POST" })
+  .validator(heroSchema)
+  .handler(async ({ data }) => (await import("./impl/admin")).updateHero(data));
+
+// ---------------------------------------------------------------- image « À propos »
+
+export const getAboutForAdminFn = createServerFn({ method: "GET" }).handler(
+  async (): Promise<About> => (await import("./impl/admin")).getAboutForAdmin(),
+);
+
+export const updateAboutFn = createServerFn({ method: "POST" })
+  .validator(aboutSchema)
+  .handler(async ({ data }) => (await import("./impl/admin")).updateAbout(data));

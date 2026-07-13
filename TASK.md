@@ -30,7 +30,48 @@
 
 > **Reprendre ici.** Mettre à jour ce bloc à chaque session (2 lignes max).
 
-- **▶ PHASES 1–4 TERMINÉES ; Phase 4+ enrichie (session 2026-07-12).**
+- **▶ PHASES 1–4 TERMINÉES ; Phase 4+ enrichie (sessions 2026-07-12).**
+  **Session 2026-07-12b (⚠️ NON COMMITÉE)** — trois ajouts admin :
+  (1) **Diaporama d'accueil éditable** (`HeroSettings`, ajouter/remplacer/retirer/réordonner,
+  ImageKit dossier `hero`, clé `settings.hero` `{slides:string[]}` max 8, `useHero`,
+  `getHeroFn`/`updateHeroFn`) — **placé dans Pages › onglet Accueil** (le héro fait partie de
+  la page d'accueil ; PAS dans Paramètres). Liste vide = 3 photos bundlées par défaut ; **les
+  3 diapos par défaut ont été téléversées sur ImageKit (`/prestigelocations/hero/`) et posées
+  dans `settings.hero` (BD dev)** pour qu'elles s'affichent avec aperçu + suppression/ordre
+  dans l'admin (comme le logo — à refaire/seeder côté prod).
+  (2) **Logo courant téléversé sur ImageKit** (`/prestigelocations/branding/logo.png`) et fixé
+  comme `settings.branding.logoKey` → il s'affiche dans l'en-tête/pied + l'aperçu de l'onglet
+  Paramètres › Logo (⚠️ posé dans la BD **dev** ; à refaire côté prod, ou seeder plus tard).
+  (3) **Textes « Section catégories » éditables dans Pages › Accueil** : ajout des chemins
+  `categoriesSection.eyebrow` (pré-titre) et `categoriesSection.andMore` (« Et plus encore »,
+  dernière ligne des cartes) à la liste blanche `lib/content.ts`. Pas de migration (clés
+  `settings`).
+  (4) **Image « À propos » éditable dans Pages › À propos** (`AboutSettings`, mirror du logo :
+  clé `settings.about` `{imageKey}`, `useAbout`, `getAboutFn`/`updateAboutFn`, dossier ImageKit
+  `about`) ; image par défaut téléversée (`/prestigelocations/about/about-mission.jpg`) + posée
+  dans `settings.about` (BD dev) → aperçu/remplacer/retirer dans l'admin.
+  **UX** : `HeroSettings` + `AboutSettings` sont **contrôlés** (pas de bouton d'enregistrement
+  propre) — tout (textes + diaporama + image À propos) s'enregistre par l'**unique** bouton
+  « Enregistrer les modifications » de la page (corrige le piège des 2 boutons : réordonner le
+  diaporama puis cliquer le gros bouton ne sauvait pas l'ordre). Réordonnancement par flèches ↑↓.
+  Vérifié bout en bout en Docker prod (logo + héro + image À propos servis du CDN + aperçus
+  admin ; réordonner → bouton unique → ordre en BD + public ; override `andMore` sur les 3
+  cartes puis nettoyé) ; tsc + eslint OK.
+  (5) **Points forts éditables par catégorie** (migration **`0009`** : colonnes jsonb
+  `bullets_fr`/`bullets_en` sur `categories`) — liste de puces en **texte libre**, éditée dans
+  Admin › Catégories (ajout/retrait/ordre, FR+EN par ligne), affichée sous chaque catégorie sur
+  l'accueil ET la page Équipements. **Découplé des équipements** : la carte accueil et la page
+  Équipements n'utilisent PLUS les noms d'équipements — elles lisent `category.bullets[lang]`.
+  Seed rempli pour les 3 catégories (repris des lignes actuelles) ; migration appliquée +
+  lignes dev remplies à la main (le seed ne réécrit pas les bullets existants). `withCode`/
+  `statusSuffix` retirés de `CategoriesSection`/`EquipmentPage` (encore utilisés ailleurs).
+  Vérifié bout en bout en Docker prod (édition d'une puce « Livraison partout… » sans lien avec
+  un équipement → visible sur l'accueil, puis remis au seed) ; tsc + eslint OK.
+  Migrations à jour → **`0009`**.
+  *(Reste statique, non demandé : suffixes de statut « (bientôt disponible) / sur demande »
+  `lib/catalog.ts` — plus utilisés sur l'accueil/Équipements mais encore sur la fiche catégorie ;
+  icônes de catégorie `visualsBySlug`; texte de la page Équipements `equipmentPage.*` absent de
+  Pages; bannière CTA `cta-trailer.jpg`.)*
   **PROCHAINE ÉTAPE : Phase 5 — Hébergement** : scripts `scripts/*.sh`,
   `docker-compose.prod.yml` + `Caddyfile` (TLS Let's Encrypt), `infra/README.md`, et régler
   la dette « migrations + seed automatiques au démarrage du conteneur ». **Bloquée 🧍** :

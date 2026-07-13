@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { iconActionCls } from "@/components/admin/action-icons";
 import {
@@ -30,10 +30,41 @@ function CategoryEditor({ category }: { category: AdminCategory }) {
   const set = <K extends keyof AdminCategory>(key: K, value: AdminCategory[K]) =>
     setV((prev) => ({ ...prev, [key]: value }));
 
+  // Points forts édités en paires FR/EN alignées (une ligne = un point bilingue).
+  const bulletRows = Array.from(
+    { length: Math.max(v.bulletsFr.length, v.bulletsEn.length) },
+    (_, i) => ({ fr: v.bulletsFr[i] ?? "", en: v.bulletsEn[i] ?? "" }),
+  );
+  function setBullets(rows: { fr: string; en: string }[]) {
+    setV((prev) => ({
+      ...prev,
+      bulletsFr: rows.map((r) => r.fr),
+      bulletsEn: rows.map((r) => r.en),
+    }));
+  }
+  function updateBullet(i: number, lang: "fr" | "en", value: string) {
+    setBullets(bulletRows.map((r, idx) => (idx === i ? { ...r, [lang]: value } : r)));
+  }
+  function moveBullet(i: number, dir: -1 | 1) {
+    const t = i + dir;
+    if (t < 0 || t >= bulletRows.length) return;
+    const next = [...bulletRows];
+    [next[i], next[t]] = [next[t]!, next[i]!];
+    setBullets(next);
+  }
+
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    await updateCategoryFn({ data: v });
+    // On ne garde que les points forts remplis dans les deux langues.
+    const rows = bulletRows.filter((r) => r.fr.trim() && r.en.trim());
+    await updateCategoryFn({
+      data: {
+        ...v,
+        bulletsFr: rows.map((r) => r.fr.trim()),
+        bulletsEn: rows.map((r) => r.en.trim()),
+      },
+    });
     setBusy(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -165,6 +196,70 @@ function CategoryEditor({ category }: { category: AdminCategory }) {
           />
         </div>
       </div>
+      <div className="mt-6">
+        <label className={labelCls}>Points forts (liste affichée sur le site)</label>
+        <p className="-mt-0.5 mb-2 text-xs text-muted-foreground">
+          Les lignes affichées sous la catégorie (accueil et page Équipements). Texte libre,
+          indépendant des équipements. Une ligne = un point, en français et en anglais.
+        </p>
+        <div className="space-y-2">
+          {bulletRows.map((row, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <div className="grid flex-1 gap-2 sm:grid-cols-2">
+                <input
+                  value={row.fr}
+                  onChange={(e) => updateBullet(i, "fr", e.target.value)}
+                  placeholder="Point (FR)"
+                  className={inputCls}
+                />
+                <input
+                  value={row.en}
+                  onChange={(e) => updateBullet(i, "en", e.target.value)}
+                  placeholder="Point (EN)"
+                  className={inputCls}
+                />
+              </div>
+              <div className="flex shrink-0 items-center gap-1 pt-1.5">
+                <button
+                  type="button"
+                  aria-label="Monter"
+                  disabled={i === 0}
+                  onClick={() => moveBullet(i, -1)}
+                  className="rounded p-1 text-foreground/70 hover:text-primary disabled:opacity-30"
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Descendre"
+                  disabled={i === bulletRows.length - 1}
+                  onClick={() => moveBullet(i, 1)}
+                  className="rounded p-1 text-foreground/70 hover:text-primary disabled:opacity-30"
+                >
+                  <ArrowDown className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Retirer ce point"
+                  onClick={() => setBullets(bulletRows.filter((_, idx) => idx !== i))}
+                  className="rounded p-1 text-destructive hover:opacity-80"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => setBullets([...bulletRows, { fr: "", en: "" }])}
+          className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+        >
+          <Plus className="h-4 w-4" />
+          Ajouter un point
+        </button>
+      </div>
+
       <div className="mt-4 flex items-center gap-3">
         <button type="submit" disabled={busy} className="btn-gold-outline disabled:opacity-60">
           {busy ? "Enregistrement…" : "Enregistrer"}

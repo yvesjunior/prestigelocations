@@ -3,13 +3,18 @@ import { Handshake, MapPin, Sparkles } from "lucide-react";
 import { SectionTitle } from "@/components/site/SectionTitle";
 import { CtaSection } from "@/components/site/CtaSection";
 import { pagePaths, useLang, useT } from "@/lib/i18n";
-import missionImage from "@/assets/hero-excavator3.jpg";
+import { useAbout } from "@/lib/useAbout";
+import { imageUrl } from "@/lib/images";
+import missionImageDefault from "@/assets/hero-excavator3.jpg";
 
 const valueIcons = [Sparkles, Handshake, MapPin];
 
 export function AboutPage() {
   const lang = useLang();
   const t = useT();
+  const about = useAbout();
+  // Image téléversée dans l'admin (ImageKit), sinon l'image bundlée par défaut.
+  const missionImage = imageUrl(about.imageKey, { w: 1536 }) ?? missionImageDefault;
 
   return (
     <>

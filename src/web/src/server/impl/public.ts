@@ -19,6 +19,8 @@ import { contactInfoSchema, DEFAULT_CONTACT, type ContactInfo } from "@/lib/cont
 import { contentOverridesSchema, type ContentOverrides } from "@/lib/content";
 import { brandingSchema, DEFAULT_BRANDING, type Branding } from "@/lib/branding";
 import { pricingSchema, DEFAULT_PRICING, type Pricing } from "@/lib/pricing";
+import { heroSchema, DEFAULT_HERO, type Hero } from "@/lib/hero";
+import { aboutSchema, DEFAULT_ABOUT, type About } from "@/lib/about";
 
 export async function loadCatalog(): Promise<CatalogData> {
   const db = getDb();
@@ -39,6 +41,7 @@ export async function loadCatalog(): Promise<CatalogData> {
       pageDescription: { fr: c.pageDescriptionFr, en: c.pageDescriptionEn },
       cta: { fr: c.ctaFr, en: c.ctaEn },
       alt: { fr: c.altFr, en: c.altEn },
+      bullets: { fr: c.bulletsFr, en: c.bulletsEn },
       imageKey: c.imageKey,
       position: c.position,
     })),
@@ -89,6 +92,22 @@ export async function loadPricing(): Promise<Pricing> {
   if (!row) return DEFAULT_PRICING;
   const parsed = pricingSchema.safeParse(row.value);
   return parsed.success ? parsed.data : DEFAULT_PRICING;
+}
+
+export async function loadHero(): Promise<Hero> {
+  const db = getDb();
+  const [row] = await db.select().from(settings).where(eq(settings.key, "hero"));
+  if (!row) return DEFAULT_HERO;
+  const parsed = heroSchema.safeParse(row.value);
+  return parsed.success ? parsed.data : DEFAULT_HERO;
+}
+
+export async function loadAbout(): Promise<About> {
+  const db = getDb();
+  const [row] = await db.select().from(settings).where(eq(settings.key, "about"));
+  if (!row) return DEFAULT_ABOUT;
+  const parsed = aboutSchema.safeParse(row.value);
+  return parsed.success ? parsed.data : DEFAULT_ABOUT;
 }
 
 export async function loadPageContent(): Promise<ContentOverrides> {

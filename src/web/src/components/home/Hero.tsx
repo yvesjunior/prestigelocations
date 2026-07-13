@@ -7,28 +7,40 @@ import heroSlide4 from "@/assets/hero-slide-4.webp";
 import { pagePaths, useLang, useT } from "@/lib/i18n";
 import { phoneHref } from "@/lib/contact";
 import { useContact } from "@/lib/useContact";
+import { useHero } from "@/lib/useHero";
+import { imageUrl } from "@/lib/images";
 
 const SLIDE_INTERVAL_MS = 10_000; // rotation lente
-const SLIDE_COUNT = 3;
 
 export function Hero() {
   const lang = useLang();
   const t = useT();
   const contact = useContact();
+  const hero = useHero();
   const [slide, setSlide] = useState(0);
 
-  const slides = [
+  // Diaporama éditable depuis l'admin (clés ImageKit) ; sinon les 3 photos
+  // bundlées par défaut. On garde des `alt` descriptifs pour l'accessibilité.
+  const defaultSlides = [
     { src: heroSlide2, alt: t.hero.imageAlt2 },
     { src: heroSlide3, alt: t.hero.imageAlt3 },
     { src: heroSlide4, alt: t.hero.imageAlt4 },
   ];
+  const customSlides = hero.slides
+    .map((key) => imageUrl(key, { w: 1536 }))
+    .filter((src): src is string => src !== null)
+    .map((src) => ({ src, alt: t.hero.imageAlt }));
+  const slides = customSlides.length > 0 ? customSlides : defaultSlides;
+  const slideCount = slides.length;
 
   // Un setTimeout ré-armé à chaque changement (auto ou clic) : cliquer un point
   // relance le compte à rebours, et aucun minuteur périmé ne peut survivre.
+  // Inutile de faire tourner un minuteur s'il n'y a qu'une seule diapo.
   useEffect(() => {
-    const id = setTimeout(() => setSlide((slide + 1) % SLIDE_COUNT), SLIDE_INTERVAL_MS);
+    if (slideCount <= 1) return;
+    const id = setTimeout(() => setSlide((slide + 1) % slideCount), SLIDE_INTERVAL_MS);
     return () => clearTimeout(id);
-  }, [slide]);
+  }, [slide, slideCount]);
 
   return (
     <section className="relative overflow-hidden">

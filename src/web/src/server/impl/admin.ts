@@ -20,10 +20,19 @@ import { deleteImageKitFile } from "./imagekit";
 import { loadTheme } from "./public";
 import type { ThemeConfig } from "@/lib/theme";
 import type { ContactInfo } from "@/lib/contact";
-import { loadBranding, loadContact, loadPageContent, loadPricing } from "./public";
+import {
+  loadAbout,
+  loadBranding,
+  loadContact,
+  loadHero,
+  loadPageContent,
+  loadPricing,
+} from "./public";
 import type { ContentOverrides } from "@/lib/content";
 import type { Branding } from "@/lib/branding";
 import type { Pricing } from "@/lib/pricing";
+import type { Hero } from "@/lib/hero";
+import type { About } from "@/lib/about";
 import type {
   AdminCategory,
   AdminCustomer,
@@ -160,6 +169,8 @@ export async function listCategories(): Promise<AdminCategory[]> {
       pageDescriptionEn: categories.pageDescriptionEn,
       ctaFr: categories.ctaFr,
       ctaEn: categories.ctaEn,
+      bulletsFr: categories.bulletsFr,
+      bulletsEn: categories.bulletsEn,
       imageKey: categories.imageKey,
       position: categories.position,
     })
@@ -205,6 +216,9 @@ export async function createCategory(
       // Textes alternatifs des images : le nom, en attendant une photo dédiée (ImageKit).
       altFr: data.nameFr,
       altEn: data.nameEn,
+      // Points forts vides à la création — à remplir depuis la fiche.
+      bulletsFr: [],
+      bulletsEn: [],
       position: (last?.max ?? -1) + 1,
     });
   } catch (err) {
@@ -839,6 +853,42 @@ export async function updateBranding(data: Branding) {
       set: { value: data, updatedAt: sql`now()`, updatedBy: me.id },
     });
   invalidate("branding");
+  return { ok: true };
+}
+
+export async function getHeroForAdmin(): Promise<Hero> {
+  await requireUser("accountant");
+  return loadHero();
+}
+
+export async function updateHero(data: Hero) {
+  const me = await requireUser("admin");
+  await getDb()
+    .insert(settings)
+    .values({ key: "hero", value: data, updatedBy: me.id })
+    .onConflictDoUpdate({
+      target: settings.key,
+      set: { value: data, updatedAt: sql`now()`, updatedBy: me.id },
+    });
+  invalidate("hero");
+  return { ok: true };
+}
+
+export async function getAboutForAdmin(): Promise<About> {
+  await requireUser("accountant");
+  return loadAbout();
+}
+
+export async function updateAbout(data: About) {
+  const me = await requireUser("admin");
+  await getDb()
+    .insert(settings)
+    .values({ key: "about", value: data, updatedBy: me.id })
+    .onConflictDoUpdate({
+      target: settings.key,
+      set: { value: data, updatedAt: sql`now()`, updatedBy: me.id },
+    });
+  invalidate("about");
   return { ok: true };
 }
 

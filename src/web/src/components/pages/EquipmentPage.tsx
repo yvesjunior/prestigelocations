@@ -3,7 +3,6 @@ import { Check } from "lucide-react";
 import { SectionTitle } from "@/components/site/SectionTitle";
 import { CtaSection } from "@/components/site/CtaSection";
 import { categoryPagePath, useLang, useT } from "@/lib/i18n";
-import { statusSuffix, withCode } from "@/lib/catalog";
 import { CdnImage } from "@/components/site/CdnImage";
 import { BLANK_IMAGE } from "@/lib/images";
 import { useCatalog } from "@/lib/useCatalog";
@@ -20,7 +19,7 @@ const imagesBySlug: Record<string, string> = {
 export function EquipmentPage() {
   const lang = useLang();
   const t = useT();
-  const { categories, equipments } = useCatalog();
+  const { categories } = useCatalog();
 
   return (
     <>
@@ -34,13 +33,9 @@ export function EquipmentPage() {
 
       <div className="mx-auto max-w-7xl space-y-20 px-4 pb-20 lg:px-8">
         {categories.map((category, i) => {
-          const items = equipments
-            .filter((e) => e.category === category.slug)
-            .map((e) => {
-              const base = withCode(e.detail?.[lang] ?? e.name[lang], e.code);
-              const suffix = statusSuffix(e.status)?.[lang];
-              return suffix ? `${base} ${suffix}` : base;
-            });
+          // Points forts éditables de la catégorie (texte libre), indépendants
+          // des équipements.
+          const items = category.bullets[lang];
           return (
             <section key={category.slug} className="grid items-center gap-10 md:grid-cols-2">
               <CdnImage

@@ -1,22 +1,30 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { ContactSettings } from "@/components/admin/ContactSettings";
+import { HeroSettings } from "@/components/admin/HeroSettings";
+import { AboutSettings } from "@/components/admin/AboutSettings";
 import { PAGE_SECTIONS, getPath, type ContentOverrides } from "@/lib/content";
 import { translations } from "@/lib/i18n";
 import {
+  getAboutForAdminFn,
   getContactForAdminFn,
+  getHeroForAdminFn,
   getPageContentForAdminFn,
+  updateAboutFn,
+  updateHeroFn,
   updatePageContentFn,
 } from "@/server/admin";
 
 export const Route = createFileRoute("/admin/pages")({
   head: () => ({ meta: [{ title: "Pages | Administration" }] }),
   loader: async () => {
-    const [overrides, contact] = await Promise.all([
+    const [overrides, contact, hero, about] = await Promise.all([
       getPageContentForAdminFn(),
       getContactForAdminFn(),
+      getHeroForAdminFn(),
+      getAboutForAdminFn(),
     ]);
-    return { overrides, contact };
+    return { overrides, contact, hero, about };
   },
   component: PagesAdmin,
 });
@@ -29,10 +37,14 @@ function defaultValue(path: string, lang: "fr" | "en"): string {
 }
 
 function PagesAdmin() {
-  const { overrides: saved, contact } = Route.useLoaderData();
+  const { overrides: saved, contact, hero, about } = Route.useLoaderData();
   const router = useRouter();
   const [tab, setTab] = useState(PAGE_SECTIONS[0].key);
   const [overrides, setOverrides] = useState<ContentOverrides>(saved);
+  // Le diaporama (accueil) et l'image « À propos » sont des images ImageKit :
+  // leur état vit ici pour être enregistré par l'unique bouton de la page.
+  const [heroSlides, setHeroSlides] = useState<string[]>(hero.slides);
+  const [aboutImageKey, setAboutImageKey] = useState<string | null>(about.imageKey);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -78,7 +90,16 @@ function PagesAdmin() {
       }
     }
     try {
-      await updatePageContentFn({ data: cleaned });
+      // Un seul bouton enregistre tout : textes + diaporama + image « À propos ».
+      // Les images ne sont poussées que si elles ont changé (évite d'invalider
+      // le cache pour rien).
+      const heroChanged = JSON.stringify(heroSlides) !== JSON.stringify(hero.slides);
+      const aboutChanged = aboutImageKey !== about.imageKey;
+      await Promise.all([
+        updatePageContentFn({ data: cleaned }),
+        ...(heroChanged ? [updateHeroFn({ data: { slides: heroSlides } })] : []),
+        ...(aboutChanged ? [updateAboutFn({ data: { imageKey: aboutImageKey } })] : []),
+      ]);
       setOverrides(cleaned);
       setMessage("Modifications enregistrées — le site public est à jour.");
       router.invalidate();
@@ -116,6 +137,16 @@ function PagesAdmin() {
 
       <div className="mt-5 space-y-5">
         {tab === "contact" && <ContactSettings contact={contact} />}
+        {tab === "accueil" && (
+          <div className="rounded-xl border border-border/60 bg-card p-4">
+            <HeroSettings slides={heroSlides} onChange={setHeroSlides} />
+          </div>
+        )}
+        {tab === "a-propos" && (
+          <div className="rounded-xl border border-border/60 bg-card p-4">
+            <AboutSettings imageKey={aboutImageKey} onChange={setAboutImageKey} />
+          </div>
+        )}
         {section.fields.map((f) => (
           <div key={f.path} className="rounded-xl border border-border/60 bg-card p-4">
             <div className="flex items-center justify-between gap-3">

@@ -50,6 +50,10 @@ export const categories = pgTable("categories", {
   ctaEn: text("cta_en").notNull(),
   altFr: text("alt_fr").notNull(),
   altEn: text("alt_en").notNull(),
+  // Points forts affichés en liste sur la carte (accueil) et la page Équipements.
+  // Texte libre édité dans l'admin — indépendant des équipements.
+  bulletsFr: jsonb("bullets_fr").$type<string[]>().notNull().default([]),
+  bulletsEn: jsonb("bullets_en").$type<string[]>().notNull().default([]),
   imageKey: text("image_key"),
   position: integer("position").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -1,7 +1,6 @@
 import { Tractor, Truck, Wrench, type LucideIcon } from "lucide-react";
 import { CategoryCard } from "./CategoryCard";
 import { SectionTitle } from "@/components/site/SectionTitle";
-import { statusSuffix, withCode } from "@/lib/catalog";
 import { BLANK_IMAGE, imageUrl } from "@/lib/images";
 import { useCatalog } from "@/lib/useCatalog";
 import { useLang, useT } from "@/lib/i18n";
@@ -21,7 +20,7 @@ const fallbackVisual = { image: BLANK_IMAGE, icon: Tractor };
 export function CategoriesSection() {
   const lang = useLang();
   const t = useT();
-  const { categories, equipments } = useCatalog();
+  const { categories } = useCatalog();
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 lg:px-8">
@@ -33,14 +32,9 @@ export function CategoriesSection() {
       <div className="mt-14 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
         {categories.map((c) => {
           const visual = visualsBySlug[c.slug] ?? fallbackVisual;
-          const items = equipments
-            .filter((e) => e.category === c.slug)
-            .slice(0, 4)
-            .map((e) => ({
-              label: withCode(e.name[lang], e.code),
-              note: statusSuffix(e.status)?.[lang],
-            }));
-          items.push({ label: t.categoriesSection.andMore, note: undefined });
+          // Points forts éditables de la catégorie (texte libre), indépendants
+          // des équipements.
+          const items = c.bullets[lang].map((label) => ({ label }));
           return (
             <CategoryCard
               key={c.slug}

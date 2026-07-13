@@ -29,6 +29,8 @@ async function main() {
         ctaEn: c.cta.en,
         altFr: c.alt.fr,
         altEn: c.alt.en,
+        bulletsFr: c.bullets.fr,
+        bulletsEn: c.bullets.en,
         imageKey: c.imageKey,
         position: c.position,
       })
@@ -46,7 +48,7 @@ async function main() {
           altFr: c.alt.fr,
           altEn: c.alt.en,
           updatedAt: sql`now()`,
-          // image_key et position préservés (gérés via l'admin)
+          // image_key, position et bullets préservés (gérés via l'admin)
         },
       });
   }

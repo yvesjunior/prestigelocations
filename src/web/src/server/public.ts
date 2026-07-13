@@ -11,6 +11,8 @@ import type { ContactInfo } from "@/lib/contact";
 import type { ContentOverrides } from "@/lib/content";
 import type { Branding } from "@/lib/branding";
 import type { Pricing } from "@/lib/pricing";
+import type { Hero } from "@/lib/hero";
+import type { About } from "@/lib/about";
 
 export const SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE";
 
@@ -57,6 +59,14 @@ export const getBrandingFn = createServerFn({ method: "GET" }).handler(
 
 export const getPricingFn = createServerFn({ method: "GET" }).handler(async (): Promise<Pricing> =>
   loadOr503("pricing", async () => (await import("./impl/public")).loadPricing()),
+);
+
+export const getHeroFn = createServerFn({ method: "GET" }).handler(async (): Promise<Hero> =>
+  loadOr503("hero", async () => (await import("./impl/public")).loadHero()),
+);
+
+export const getAboutFn = createServerFn({ method: "GET" }).handler(async (): Promise<About> =>
+  loadOr503("about", async () => (await import("./impl/public")).loadAbout()),
 );
 
 // ------------------------------------------------- demandes de réservation

@@ -14,6 +14,9 @@ export interface CatalogCategory {
   pageDescription: Localized;
   cta: Localized;
   alt: Localized;
+  /** Points forts en liste (carte accueil + page Équipements) — texte libre,
+   *  indépendant des équipements, édité dans l'admin. */
+  bullets: { fr: string[]; en: string[] };
   imageKey: string | null;
   position: number;
 }
@@ -68,6 +71,22 @@ export const catalogCategories: CatalogCategory[] = [
     },
     cta: { fr: "Voir la machinerie", en: "See the machinery" },
     alt: { fr: "Mini-pelle sur un chantier", en: "Mini excavator on a job site" },
+    bullets: {
+      fr: [
+        "Mini-pelle (excavatrice compacte)",
+        "Tracteur compact avec accessoires",
+        "Plateforme élévatrice",
+        "Godets et accessoires variés",
+        "Et plus encore",
+      ],
+      en: [
+        "Mini excavator (compact excavator)",
+        "Compact tractor with attachments",
+        "Aerial lift",
+        "Buckets and various attachments",
+        "And more",
+      ],
+    },
     imageKey: "/prestigelocations/categories/cat-machinerie.jpg",
     position: 0,
   },
@@ -87,6 +106,22 @@ export const catalogCategories: CatalogCategory[] = [
       fr: "Remorques dompeur, fermée et plateforme",
       en: "Dump, enclosed and flatbed trailers",
     },
+    bullets: {
+      fr: [
+        "Trailer dompeur",
+        "Trailer fermé",
+        "Trailer plateforme",
+        "Attaches et accessoires de remorquage",
+        "Et plus encore",
+      ],
+      en: [
+        "Dump trailer",
+        "Enclosed trailer",
+        "Flatbed trailer",
+        "Hitches and towing accessories",
+        "And more",
+      ],
+    },
     imageKey: "/prestigelocations/categories/cat-remorques.jpg",
     position: 1,
   },
@@ -105,6 +140,16 @@ export const catalogCategories: CatalogCategory[] = [
     alt: {
       fr: "Compacteur, scie à béton et marteau-piqueur",
       en: "Compactor, concrete saw and jackhammer",
+    },
+    bullets: {
+      fr: [
+        "Compacteurs",
+        "Scies à béton",
+        "Marteaux-piqueurs",
+        "Outillage spécialisé",
+        "Et plus encore",
+      ],
+      en: ["Compactors", "Concrete saws", "Jackhammers", "Specialized tools", "And more"],
     },
     imageKey: "/prestigelocations/categories/cat-petits-equipements.jpg",
     position: 2,

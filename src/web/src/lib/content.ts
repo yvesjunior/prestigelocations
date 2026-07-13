@@ -37,8 +37,13 @@ export const PAGE_SECTIONS: PageSection[] = [
       { path: "features.2.text", label: "Argument 3 — texte", textarea: true },
       { path: "features.3.title", label: "Argument 4 — titre" },
       { path: "features.3.text", label: "Argument 4 — texte", textarea: true },
+      { path: "categoriesSection.eyebrow", label: "Section catégories — pré-titre" },
       { path: "categoriesSection.title", label: "Section catégories — titre" },
       { path: "categoriesSection.subtitle", label: "Section catégories — sous-titre" },
+      {
+        path: "categoriesSection.andMore",
+        label: "Section catégories — dernière ligne des cartes (« Et plus encore »)",
+      },
     ],
   },
   {
