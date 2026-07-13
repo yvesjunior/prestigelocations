@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useState } from "react";
 import { Eye, Plus } from "lucide-react";
 import { listEquipmentsFn, updateEquipmentFn } from "@/server/admin";
 import { iconActionCls } from "@/components/admin/action-icons";
@@ -18,11 +19,26 @@ const STATUS_LABEL: Record<string, string> = {
 function EquipmentListPage() {
   const { equipments } = Route.useLoaderData();
   const router = useRouter();
+  const [category, setCategory] = useState<string>("all");
+
+  // Catégories présentes, dans l'ordre d'affichage (les équipements arrivent déjà
+  // triés par position de catégorie puis par position d'équipement).
+  const categories: { slug: string; name: string }[] = [];
+  for (const e of equipments) {
+    if (!categories.some((c) => c.slug === e.categorySlug)) {
+      categories.push({ slug: e.categorySlug, name: e.categoryName });
+    }
+  }
+
+  const filtered =
+    category === "all" ? equipments : equipments.filter((e) => e.categorySlug === category);
 
   async function togglePublished(id: number, published: boolean) {
     await updateEquipmentFn({ data: { id, published } });
     router.invalidate();
   }
+
+  const tabs = [{ slug: "all", name: "Toutes" }, ...categories];
 
   return (
     <div>
@@ -33,7 +49,30 @@ function EquipmentListPage() {
         </Link>
       </div>
 
-      <div className="mt-6 overflow-x-auto rounded-xl border border-border/60">
+      {/* Filtre par catégorie */}
+      <div className="mt-5 flex flex-wrap gap-2">
+        {tabs.map((t) => {
+          const count =
+            t.slug === "all"
+              ? equipments.length
+              : equipments.filter((e) => e.categorySlug === t.slug).length;
+          return (
+            <button
+              key={t.slug}
+              onClick={() => setCategory(t.slug)}
+              className={`rounded-md border px-3 py-1.5 text-sm transition-colors ${
+                category === t.slug
+                  ? "border-primary bg-secondary text-primary"
+                  : "border-border text-foreground/80 hover:border-primary/60"
+              }`}
+            >
+              {t.name} <span className="text-xs text-muted-foreground">({count})</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-5 overflow-x-auto rounded-xl border border-border/60">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-border/60 bg-card text-left text-xs tracking-wider text-primary uppercase">
@@ -47,7 +86,7 @@ function EquipmentListPage() {
             </tr>
           </thead>
           <tbody>
-            {equipments.map((e) => (
+            {filtered.map((e) => (
               <tr key={e.id} className="border-b border-border/40 last:border-0 hover:bg-card/60">
                 <td className="px-4 py-3 font-medium">{e.nameFr}</td>
                 <td className="px-4 py-3 text-muted-foreground">{e.code ?? "—"}</td>
