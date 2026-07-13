@@ -24,13 +24,14 @@ export const getSessionFn = createServerFn({ method: "GET" }).handler(
 
 /**
  * Indice de connexion « démonstration » : renvoie les identifiants admin
- * (courriel + mot de passe, lus dans l'env) UNIQUEMENT si DEV_LOGIN_HINT=1.
- * Sert aux tests (ex. tunnel Cloudflare) pour qu'un employé puisse se connecter.
- * ⚠️ Renvoie null en production (drapeau absent) — ne JAMAIS l'activer en prod.
+ * (courriel + mot de passe, lus dans l'env) UNIQUEMENT quand l'environnement est
+ * « dev » (variable ENV=dev). Sert aux tests (ex. tunnel Cloudflare) pour qu'un
+ * employé puisse se connecter. ⚠️ Renvoie null en prod (ENV≠dev) — l'exposition
+ * du mot de passe ne doit JAMAIS arriver en production.
  */
 export const getDevLoginHintFn = createServerFn({ method: "GET" }).handler(
   async (): Promise<{ email: string; password: string } | null> => {
-    if (process.env.DEV_LOGIN_HINT !== "1") return null;
+    if ((process.env.ENV ?? "").toLowerCase() !== "dev") return null;
     const email = process.env.ADMIN_EMAIL;
     const password = process.env.ADMIN_PASSWORD;
     if (!email || !password) return null;

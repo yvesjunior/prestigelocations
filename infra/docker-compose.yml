@@ -26,8 +26,8 @@ services:
       SENDGRID_FROM: ${SENDGRID_FROM:-}
       # Mode du site : basic (défaut) ou advanced. Lu au runtime (redémarrer suffit).
       SITE_MODE: ${SITE_MODE:-basic}
-      # Indice de connexion démo (=1 affiche les identifiants sur /admin/login). Dev/test seulement.
-      DEV_LOGIN_HINT: ${DEV_LOGIN_HINT:-}
+      # Environnement : dev = aides de test (ex. identifiants sur /admin/login). Défaut prod.
+      ENV: ${ENV:-prod}
     depends_on:
       db:
         condition: service_healthy
