@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClipboardList, Inbox, Layers, Users } from "lucide-react";
 import { getAdminStatsFn } from "@/server/admin";
+import { useIsAdvanced } from "@/lib/useMode";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({ meta: [{ title: "Tableau de bord | Administration" }] }),
@@ -10,20 +11,26 @@ export const Route = createFileRoute("/admin/")({
 
 function DashboardPage() {
   const { stats } = Route.useLoaderData();
+  const advanced = useIsAdvanced();
 
   const cards = [
-    {
-      to: "/admin/demandes",
-      icon: Inbox,
-      label: "Demandes nouvelles",
-      value: stats.newRequests,
-    },
-    {
-      to: "/admin/commandes",
-      icon: ClipboardList,
-      label: "Locations en cours",
-      value: stats.activeOrders,
-    },
+    // Compteurs demandes/commandes : seulement en mode « advanced ».
+    ...(advanced
+      ? [
+          {
+            to: "/admin/demandes",
+            icon: Inbox,
+            label: "Demandes nouvelles",
+            value: stats.newRequests,
+          },
+          {
+            to: "/admin/commandes",
+            icon: ClipboardList,
+            label: "Locations en cours",
+            value: stats.activeOrders,
+          },
+        ]
+      : []),
     {
       to: "/admin/equipements",
       icon: Layers,
@@ -49,10 +56,12 @@ function DashboardPage() {
           </Link>
         ))}
       </div>
-      <p className="mt-8 text-sm text-muted-foreground">
-        La disponibilité (calendrier des périodes réservées) s'affiche sur la fiche de chaque
-        équipement.
-      </p>
+      {advanced && (
+        <p className="mt-8 text-sm text-muted-foreground">
+          La disponibilité (calendrier des périodes réservées) s'affiche sur la fiche de chaque
+          équipement.
+        </p>
+      )}
     </div>
   );
 }

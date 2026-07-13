@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { Ban, ClipboardCheck, Eye, Pencil, RotateCcw } from "lucide-react";
 import {
@@ -11,6 +11,7 @@ import {
   type AdminRequest,
   type RequestStatus,
 } from "@/server/admin";
+import { getSiteModeFn } from "@/server/public";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,10 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 
 export const Route = createFileRoute("/admin/demandes")({
   head: () => ({ meta: [{ title: "Demandes | Administration" }] }),
+  // Page avancée : inaccessible en mode « basic » (URL directe → tableau de bord).
+  beforeLoad: async () => {
+    if ((await getSiteModeFn()) !== "advanced") throw redirect({ to: "/admin" });
+  },
   loader: async () => ({
     requests: await listRequestsFn(),
     equipments: await listEquipmentsFn(),

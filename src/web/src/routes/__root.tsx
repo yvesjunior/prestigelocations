@@ -21,6 +21,7 @@ import {
   getHeroFn,
   getPageContentFn,
   getPricingFn,
+  getSiteModeFn,
   getThemeFn,
 } from "@/server/public";
 import { imageUrl } from "@/lib/images";
@@ -112,7 +113,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   // Thème + coordonnées (BD, cache 60 s) — l'admin est la source de vérité.
   loader: async () => {
-    const [theme, contact, content, branding, pricing, hero, about] = await Promise.all([
+    const [theme, contact, content, branding, pricing, hero, about, mode] = await Promise.all([
       getThemeFn(),
       getContactFn(),
       getPageContentFn(),
@@ -120,8 +121,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       getPricingFn(),
       getHeroFn(),
       getAboutFn(),
+      getSiteModeFn(),
     ]);
-    return { theme, contact, content, branding, pricing, hero, about };
+    return { theme, contact, content, branding, pricing, hero, about, mode };
   },
   head: ({ loaderData }) => {
     // Favicon : logo téléversé (ImageKit) si présent, sinon l'icône bundlée.

@@ -1,9 +1,14 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { exportRequestsCsvFn, getReportFn, type Report, type ReportPeriod } from "@/server/admin";
+import { getSiteModeFn } from "@/server/public";
 
 export const Route = createFileRoute("/admin/rapports")({
   head: () => ({ meta: [{ title: "Rapports | Administration" }] }),
+  // Page avancée : inaccessible en mode « basic » (URL directe → tableau de bord).
+  beforeLoad: async () => {
+    if ((await getSiteModeFn()) !== "advanced") throw redirect({ to: "/admin" });
+  },
   validateSearch: (search: Record<string, unknown>): { periode?: ReportPeriod } => {
     const p = search.periode;
     return { periode: p === "30d" || p === "90d" || p === "12m" || p === "all" ? p : undefined };

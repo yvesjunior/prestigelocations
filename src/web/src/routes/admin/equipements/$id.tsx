@@ -9,6 +9,7 @@ import {
   listOrdersFn,
   updateEquipmentFn,
 } from "@/server/admin";
+import { useIsAdvanced } from "@/lib/useMode";
 
 export const Route = createFileRoute("/admin/equipements/$id")({
   head: () => ({ meta: [{ title: "Modifier un équipement | Administration" }] }),
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/admin/equipements/$id")({
 function EditEquipmentPage() {
   const { equipment, categories, orders } = Route.useLoaderData();
   const navigate = useNavigate();
+  const advanced = useIsAdvanced();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,9 +69,11 @@ function EditEquipmentPage() {
         />
       </div>
 
-      <div className="mt-10 border-t border-border/60 pt-8">
-        <EquipmentAvailability orders={orders} equipmentId={equipment.id} />
-      </div>
+      {advanced && (
+        <div className="mt-10 border-t border-border/60 pt-8">
+          <EquipmentAvailability orders={orders} equipmentId={equipment.id} />
+        </div>
+      )}
     </div>
   );
 }

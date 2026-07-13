@@ -11,6 +11,7 @@ import { withCode } from "@/lib/catalog";
 import { useCatalog } from "@/lib/useCatalog";
 import { phoneHref } from "@/lib/contact";
 import { useContact } from "@/lib/useContact";
+import { useIsAdvanced } from "@/lib/useMode";
 import { getUnavailableRangesFn, submitReservationRequestFn } from "@/server/public";
 
 const inputCls =
@@ -33,6 +34,9 @@ export function ContactPage() {
   const t = useT();
   const contact = useContact();
   const { equipments } = useCatalog();
+  // Mode « advanced » : calendrier de disponibilité + dates obligatoires.
+  // Mode « basic » : demande simple sans dates (un employé rappelle le client).
+  const advanced = useIsAdvanced();
 
   // Tous les équipements publiés (la BD est la source de vérité) — les statuts
   // « bientôt » / « sur demande » se demandent aussi.
@@ -59,7 +63,8 @@ export function ContactPage() {
   const slugKey = slugs.join(",");
   useEffect(() => {
     setRange(undefined);
-    if (slugs.length === 0) {
+    // Pas de calendrier en mode basic → on n'interroge jamais les disponibilités.
+    if (!advanced || slugs.length === 0) {
       setUnavailable([]);
       return;
     }
@@ -83,7 +88,8 @@ export function ContactPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     // Équipement précis → la période est obligatoire (le serveur revérifie).
-    if (slugs.length > 0 && !range?.from) {
+    // Uniquement en mode avancé : en basic il n'y a pas de calendrier.
+    if (advanced && slugs.length > 0 && !range?.from) {
       setError(t.contactPage.errors.dates_required);
       return;
     }
@@ -240,7 +246,7 @@ export function ContactPage() {
                 <p className="mt-1.5 text-xs text-muted-foreground">{t.contactPage.otherOption}</p>
               </div>
 
-              {slugs.length > 0 && (
+              {advanced && slugs.length > 0 && (
                 <div>
                   <p className={labelCls}>{t.contactPage.datesLabel}</p>
                   <div className="rounded-md border border-input p-1">

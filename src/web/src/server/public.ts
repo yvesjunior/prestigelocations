@@ -13,6 +13,7 @@ import type { Branding } from "@/lib/branding";
 import type { Pricing } from "@/lib/pricing";
 import type { Hero } from "@/lib/hero";
 import type { About } from "@/lib/about";
+import type { SiteMode } from "@/lib/mode";
 
 export const SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE";
 
@@ -67,6 +68,12 @@ export const getHeroFn = createServerFn({ method: "GET" }).handler(async (): Pro
 
 export const getAboutFn = createServerFn({ method: "GET" }).handler(async (): Promise<About> =>
   loadOr503("about", async () => (await import("./impl/public")).loadAbout()),
+);
+
+// Mode du site (env SITE_MODE) — pas de BD, pas de 503 : une valeur d'env, jamais
+// une panne. Défaut « basic » assuré côté impl.
+export const getSiteModeFn = createServerFn({ method: "GET" }).handler(
+  async (): Promise<SiteMode> => (await import("./impl/public")).serverMode(),
 );
 
 // ------------------------------------------------- demandes de réservation

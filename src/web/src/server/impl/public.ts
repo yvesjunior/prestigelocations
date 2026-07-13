@@ -21,6 +21,7 @@ import { brandingSchema, DEFAULT_BRANDING, type Branding } from "@/lib/branding"
 import { pricingSchema, DEFAULT_PRICING, type Pricing } from "@/lib/pricing";
 import { heroSchema, DEFAULT_HERO, type Hero } from "@/lib/hero";
 import { aboutSchema, DEFAULT_ABOUT, type About } from "@/lib/about";
+import type { SiteMode } from "@/lib/mode";
 
 export async function loadCatalog(): Promise<CatalogData> {
   const db = getDb();
@@ -100,6 +101,11 @@ export async function loadHero(): Promise<Hero> {
   if (!row) return DEFAULT_HERO;
   const parsed = heroSchema.safeParse(row.value);
   return parsed.success ? parsed.data : DEFAULT_HERO;
+}
+
+/** Mode du site depuis l'environnement serveur. Défaut « basic ». */
+export function serverMode(): SiteMode {
+  return process.env.SITE_MODE === "advanced" ? "advanced" : "basic";
 }
 
 export async function loadAbout(): Promise<About> {
@@ -196,8 +202,10 @@ export async function submitReservationRequest(
     if (hasRange && data.endDate! < data.startDate!) {
       return { ok: false, error: "generic" };
     }
-    // Équipement précis → la période est obligatoire.
-    if (items.length > 0 && !hasRange) {
+    // Équipement précis → la période est obligatoire, MAIS seulement en mode
+    // avancé : en mode « basic » il n'y a pas de calendrier, la demande part sans
+    // dates (un employé rappelle le client).
+    if (serverMode() === "advanced" && items.length > 0 && !hasRange) {
       return { ok: false, error: "dates_required" };
     }
     // Revalidation serveur : aucun des équipements demandés ne doit chevaucher

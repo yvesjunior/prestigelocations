@@ -24,6 +24,8 @@ services:
       IMAGEKIT_FOLDER: ${IMAGEKIT_FOLDER:-prestigelocations}
       SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
       SENDGRID_FROM: ${SENDGRID_FROM:-}
+      # Mode du site : basic (défaut) ou advanced. Lu au runtime (redémarrer suffit).
+      SITE_MODE: ${SITE_MODE:-basic}
     depends_on:
       db:
         condition: service_healthy

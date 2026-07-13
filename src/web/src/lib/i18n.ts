@@ -156,6 +156,7 @@ const fr = {
     title: "Notre inventaire",
     subtitle: "Tout ce qu'il faut pour vos projets",
     checkAvailability: "Vérifier la disponibilité",
+    request: "Demander cet équipement",
     perDay: "/ jour",
   },
   categoryPage: {
@@ -403,6 +404,7 @@ const en: Dict = {
     title: "Our inventory",
     subtitle: "Everything you need for your projects",
     checkAvailability: "Check availability",
+    request: "Request this equipment",
     perDay: "/ day",
   },
   categoryPage: {

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { getSessionFn, logoutFn, type SessionUser } from "@/server/auth";
+import { useIsAdvanced } from "@/lib/useMode";
 
 export const Route = createFileRoute("/admin")({
   beforeLoad: async ({ location }): Promise<{ session: SessionUser | null }> => {
@@ -41,15 +42,17 @@ type NavItem = {
   exact?: boolean;
   disabled?: boolean;
   adminOnly?: boolean;
+  /** Visible seulement en mode « advanced » (calendrier / commandes / rapports). */
+  advancedOnly?: boolean;
 };
 
 const NAV: NavItem[] = [
   { to: "/admin", label: "Tableau de bord", icon: Home, exact: true },
   { to: "/admin/equipements", label: "Équipements", icon: Layers },
   { to: "/admin/categories", label: "Catégories", icon: Tags },
-  { to: "/admin/demandes", label: "Demandes", icon: Inbox },
-  { to: "/admin/commandes", label: "Commandes", icon: ClipboardList },
-  { to: "/admin/rapports", label: "Rapports", icon: BarChart3 },
+  { to: "/admin/demandes", label: "Demandes", icon: Inbox, advancedOnly: true },
+  { to: "/admin/commandes", label: "Commandes", icon: ClipboardList, advancedOnly: true },
+  { to: "/admin/rapports", label: "Rapports", icon: BarChart3, advancedOnly: true },
   { to: "/admin/pages", label: "Pages", icon: FileText },
   { to: "/admin/parametres", label: "Paramètres", icon: Settings },
   { to: "/admin/employes", label: "Employés & rôles", icon: Users, adminOnly: true },
@@ -60,6 +63,7 @@ function AdminLayout() {
   const { session } = Route.useRouteContext();
   const pathname = useLocation({ select: (l) => l.pathname });
   const navigate = useNavigate();
+  const advanced = useIsAdvanced();
   const [open, setOpen] = useState(false);
 
   if (pathname === "/admin/login") return <Outlet />;
@@ -70,7 +74,9 @@ function AdminLayout() {
     navigate({ to: "/admin/login" });
   }
 
-  const links = NAV.filter((n) => !n.adminOnly || session?.role === "admin");
+  const links = NAV.filter(
+    (n) => (!n.adminOnly || session?.role === "admin") && (!n.advancedOnly || advanced),
+  );
 
   const nav = (
     <nav className="flex flex-col gap-1 p-3">

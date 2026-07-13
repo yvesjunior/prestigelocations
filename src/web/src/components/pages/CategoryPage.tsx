@@ -9,6 +9,7 @@ import { pagePaths, useLang, useT } from "@/lib/i18n";
 import { useCatalog } from "@/lib/useCatalog";
 import { usePricing } from "@/lib/usePricing";
 import { formatMoney } from "@/lib/pricing";
+import { useIsAdvanced } from "@/lib/useMode";
 
 /**
  * Page publique d'une catégorie : ses équipements (BD) avec le bouton
@@ -20,6 +21,7 @@ export function CategoryPage({ slug }: { slug: string }) {
   const t = useT();
   const { categories, equipments } = useCatalog();
   const pricing = usePricing();
+  const advanced = useIsAdvanced();
   const category = categories.find((c) => c.slug === slug);
   if (!category) return null; // la route a déjà validé le slug (notFound)
 
@@ -89,7 +91,7 @@ export function CategoryPage({ slug }: { slug: string }) {
                         search={{ equipement: e.slug }}
                         className="btn-gold-outline"
                       >
-                        {t.equipmentPage.checkAvailability}
+                        {advanced ? t.equipmentPage.checkAvailability : t.equipmentPage.request}
                       </Link>
                     </div>
                   </div>
