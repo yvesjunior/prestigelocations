@@ -58,8 +58,23 @@ function EditEquipmentPage() {
           }}
           onDelete={async () => {
             setBusy(true);
+            setError(null);
             try {
-              await deleteEquipmentFn({ data: { id: equipment.id } });
+              const res = await deleteEquipmentFn({ data: { id: equipment.id } });
+              // Lié à des commandes → confirmer le retrait de ces commandes.
+              if (!res.ok && res.requiresConfirm) {
+                const n = res.orderCount ?? 0;
+                const ok = confirm(
+                  `Cet équipement figure dans ${n} commande(s).\n\n` +
+                    `Le supprimer le retirera de ces commandes ; celles qui ne contiennent ` +
+                    `que cet équipement seront supprimées.\n\nContinuer la suppression ?`,
+                );
+                if (!ok) {
+                  setBusy(false);
+                  return;
+                }
+                await deleteEquipmentFn({ data: { id: equipment.id, force: true } });
+              }
               navigate({ to: "/admin/equipements" });
             } catch (err) {
               setError(err instanceof Error ? err.message : "Erreur à la suppression.");

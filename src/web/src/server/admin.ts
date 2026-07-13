@@ -198,8 +198,8 @@ export const updateEquipmentFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => (await import("./impl/admin")).updateEquipment(data));
 
 export const deleteEquipmentFn = createServerFn({ method: "POST" })
-  .validator(z.object({ id: z.number().int() }))
-  .handler(async ({ data }) => (await import("./impl/admin")).deleteEquipment(data.id));
+  .validator(z.object({ id: z.number().int(), force: z.boolean().optional() }))
+  .handler(async ({ data }) => (await import("./impl/admin")).deleteEquipment(data.id, data.force));
 
 // ---------------------------------------------------------------- catégories
 

@@ -145,13 +145,49 @@ export async function updateEquipment(data: Partial<EquipmentInput> & { id: numb
   return { ok: true };
 }
 
-export async function deleteEquipment(id: number) {
+export async function deleteEquipment(
+  id: number,
+  force = false,
+): Promise<{ ok: boolean; error?: string; requiresConfirm?: boolean; orderCount?: number }> {
   await requireUser("admin");
   const db = getDb();
+
+  // Commandes qui contiennent cet équipement (order_items = clé étrangère
+  // « restrict » : sans traitement, la suppression échoue). Les demandes, elles,
+  // passent en « set null » (le libellé figé reste) — rien à faire.
+  const linked = await db
+    .selectDistinct({ orderId: orderItems.orderId })
+    .from(orderItems)
+    .where(eq(orderItems.equipmentId, id));
+
+  // Lié à des commandes et pas encore confirmé → on demande confirmation.
+  if (linked.length > 0 && !force) {
+    return { ok: false, requiresConfirm: true, orderCount: linked.length };
+  }
+
   const [old] = await db
     .select({ imageKey: equipments.imageKey })
     .from(equipments)
     .where(eq(equipments.id, id));
+
+  if (force && linked.length > 0) {
+    const orderIds = linked.map((r) => r.orderId);
+    // Retire l'équipement des commandes…
+    await db.delete(orderItems).where(eq(orderItems.equipmentId, id));
+    // …puis supprime les commandes qui n'ont plus aucun équipement (une commande
+    // sans équipement n'a pas de sens — l'app en crée toujours avec ≥ 1).
+    const remaining = await db
+      .selectDistinct({ orderId: orderItems.orderId })
+      .from(orderItems)
+      .where(inArray(orderItems.orderId, orderIds));
+    const stillHave = new Set(remaining.map((r) => r.orderId));
+    const emptied = orderIds.filter((oid) => !stillHave.has(oid));
+    if (emptied.length > 0) {
+      await db.delete(orders).where(inArray(orders.id, emptied));
+    }
+  }
+
+  // reservation_request_items.equipment_id → set null automatiquement (FK).
   await db.delete(equipments).where(eq(equipments.id, id));
   if (old?.imageKey) void deleteImageKitFile(old.imageKey);
   invalidate("catalog");
