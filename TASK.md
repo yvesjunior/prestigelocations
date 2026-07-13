@@ -31,7 +31,15 @@
 > **Reprendre ici.** Mettre à jour ce bloc à chaque session (2 lignes max).
 
 - **▶ PHASES 1–4 TERMINÉES ; Phase 4+ enrichie (sessions 2026-07-12).**
-  **Session 2026-07-12b (⚠️ NON COMMITÉE)** — trois ajouts admin :
+  **Interrupteur `SITE_MODE` basic/advanced (commit `74d2bfc`)** — variable d'env (défaut
+  « basic »), lue serveur (`getSiteModeFn`), exposée via loader racine (`useMode`/`useIsAdvanced`),
+  flip = éditer `.env` + `docker compose up -d web` (recréer, PAS de rebuild). **Basic** masque :
+  calendrier de dispo + dates du formulaire public (la demande part quand même, enregistrée +
+  courriel) et les pages admin Demandes/Commandes/Rapports (+ compteurs + dispo par équipement) ;
+  les demandes continuent d'être enregistrées → réapparaissent quand on passe en advanced.
+  `SITE_MODE` ajouté au bloc `environment:` de `infra/docker-compose.yml`. Vérifié 2 modes en
+  Docker. **PROCHAINE DISCUSSION : « handle the price ».**
+  **Session 2026-07-12b (commit `0fb69b7`)** — cinq ajouts admin :
   (1) **Diaporama d'accueil éditable** (`HeroSettings`, ajouter/remplacer/retirer/réordonner,
   ImageKit dossier `hero`, clé `settings.hero` `{slides:string[]}` max 8, `useHero`,
   `getHeroFn`/`updateHeroFn`) — **placé dans Pages › onglet Accueil** (le héro fait partie de
