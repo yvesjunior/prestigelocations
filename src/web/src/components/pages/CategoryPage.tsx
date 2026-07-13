@@ -8,7 +8,7 @@ import { BLANK_IMAGE } from "@/lib/images";
 import { pagePaths, useLang, useT } from "@/lib/i18n";
 import { useCatalog } from "@/lib/useCatalog";
 import { usePricing } from "@/lib/usePricing";
-import { formatMoney } from "@/lib/pricing";
+import { formatMoney, RATE_PERIODS } from "@/lib/pricing";
 import { useIsAdvanced } from "@/lib/useMode";
 
 /**
@@ -71,15 +71,28 @@ export function CategoryPage({ slug }: { slug: string }) {
                       {withCode(e.name[lang], e.code)}
                     </h2>
                     {suffix && <p className="mt-1 text-xs text-primary">{suffix}</p>}
-                    {pricing.showDailyPrice && e.dailyPriceCents != null && (
-                      <p className="mt-2 font-semibold text-primary">
-                        {formatMoney(e.dailyPriceCents, lang)}
-                        <span className="text-sm font-normal text-muted-foreground">
-                          {" "}
-                          {t.equipmentPage.perDay}
-                        </span>
-                      </p>
-                    )}
+                    {pricing.showDailyPrice &&
+                      (() => {
+                        // Seules les périodes renseignées sont affichées.
+                        const rates = RATE_PERIODS.map((p) => ({
+                          key: p.labelKey,
+                          cents: e[p.field],
+                        })).filter((r) => r.cents != null);
+                        if (rates.length === 0) return null;
+                        return (
+                          <ul className="mt-2 space-y-0.5">
+                            {rates.map((r) => (
+                              <li key={r.key} className="font-semibold text-primary">
+                                {formatMoney(r.cents!, lang)}
+                                <span className="text-sm font-normal text-muted-foreground">
+                                  {" "}
+                                  {t.equipmentPage.periods[r.key]}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        );
+                      })()}
                     <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
                       {e.detail?.[lang] ?? ""}
                     </p>

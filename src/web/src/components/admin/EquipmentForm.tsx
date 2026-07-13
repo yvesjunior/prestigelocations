@@ -15,9 +15,22 @@ export interface EquipmentFormValues {
   status: "disponible" | "bientot" | "sur_demande";
   imageKey: string | null;
   dailyPriceCents: number | null;
+  weeklyPriceCents: number | null;
+  weekendPriceCents: number | null;
+  monthlyPriceCents: number | null;
   published: boolean;
   position: number;
 }
+
+/** Champs de tarif (en cents) et leur libellé dans le formulaire. */
+type PriceField =
+  "dailyPriceCents" | "weeklyPriceCents" | "weekendPriceCents" | "monthlyPriceCents";
+const PRICE_FIELDS: { field: PriceField; label: string }[] = [
+  { field: "dailyPriceCents", label: "Prix / jour" },
+  { field: "weeklyPriceCents", label: "Prix / semaine" },
+  { field: "weekendPriceCents", label: "Prix / fin de semaine" },
+  { field: "monthlyPriceCents", label: "Prix / mois" },
+];
 
 const inputCls =
   "w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary";
@@ -60,17 +73,30 @@ export function EquipmentForm({
     status: initial.status ?? "disponible",
     imageKey: initial.imageKey ?? null,
     dailyPriceCents: initial.dailyPriceCents ?? null,
+    weeklyPriceCents: initial.weeklyPriceCents ?? null,
+    weekendPriceCents: initial.weekendPriceCents ?? null,
+    monthlyPriceCents: initial.monthlyPriceCents ?? null,
     published: initial.published ?? true,
     position: initial.position ?? 0,
   });
-  // Champ prix saisi en dollars (converti en cents à l'enregistrement).
-  const [priceInput, setPriceInput] = useState(
-    initial.dailyPriceCents != null ? String(initial.dailyPriceCents / 100) : "",
-  );
+  // Tarifs saisis en dollars (convertis en cents à l'enregistrement).
+  const centsToInput = (c: number | null | undefined) => (c != null ? String(c / 100) : "");
+  const [priceInputs, setPriceInputs] = useState<Record<PriceField, string>>({
+    dailyPriceCents: centsToInput(initial.dailyPriceCents),
+    weeklyPriceCents: centsToInput(initial.weeklyPriceCents),
+    weekendPriceCents: centsToInput(initial.weekendPriceCents),
+    monthlyPriceCents: centsToInput(initial.monthlyPriceCents),
+  });
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const set = <K extends keyof EquipmentFormValues>(key: K, value: EquipmentFormValues[K]) =>
     setV((prev) => ({ ...prev, [key]: value }));
+
+  function setPrice(field: PriceField, raw: string) {
+    setPriceInputs((p) => ({ ...p, [field]: raw }));
+    const dollars = parseFloat(raw);
+    set(field, raw.trim() === "" || Number.isNaN(dollars) ? null : Math.round(dollars * 100));
+  }
 
   return (
     <form
@@ -192,27 +218,6 @@ export function EquipmentForm({
           />
         </div>
         <div>
-          <label className={labelCls}>Prix / jour (optionnel)</label>
-          <input
-            type="number"
-            min={0}
-            step="0.01"
-            value={priceInput}
-            onChange={(e) => {
-              const raw = e.target.value;
-              setPriceInput(raw);
-              const dollars = parseFloat(raw);
-              set(
-                "dailyPriceCents",
-                raw.trim() === "" || Number.isNaN(dollars) ? null : Math.round(dollars * 100),
-              );
-            }}
-            placeholder="Ex. 85"
-            title="Affiché sur le site seulement si les tarifs sont activés (Paramètres › Tarifs)"
-            className={inputCls}
-          />
-        </div>
-        <div>
           <label className={labelCls}>Identifiant (slug)</label>
           <input
             value={v.slug}
@@ -223,6 +228,30 @@ export function EquipmentForm({
             title={isNew ? "" : "Le slug est immuable après création"}
           />
         </div>
+      </div>
+
+      <div>
+        <label className={labelCls}>Tarifs de location (optionnels, en $)</label>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {PRICE_FIELDS.map(({ field, label }) => (
+            <div key={field}>
+              <span className="mb-1 block text-[11px] text-muted-foreground">{label}</span>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={priceInputs[field]}
+                onChange={(e) => setPrice(field, e.target.value)}
+                placeholder="Ex. 200"
+                className={inputCls}
+              />
+            </div>
+          ))}
+        </div>
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          Laissez vide une période non offerte. Affichés sur le site seulement si les tarifs sont
+          activés (Paramètres › Tarifs).
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-6">

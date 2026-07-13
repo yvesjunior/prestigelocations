@@ -35,8 +35,11 @@ export interface CatalogEquipment {
   status: EquipmentStatus;
   published: boolean;
   imageKey: string | null;
-  /** Prix de location par jour, en cents (optionnel ; défini via l'admin). */
+  /** Tarifs de location en cents (chacun optionnel ; définis via l'admin). */
   dailyPriceCents?: number | null;
+  weeklyPriceCents?: number | null;
+  weekendPriceCents?: number | null;
+  monthlyPriceCents?: number | null;
   position: number;
 }
 

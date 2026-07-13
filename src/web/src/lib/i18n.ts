@@ -157,7 +157,12 @@ const fr = {
     subtitle: "Tout ce qu'il faut pour vos projets",
     checkAvailability: "Vérifier la disponibilité",
     request: "Demander cet équipement",
-    perDay: "/ jour",
+    periods: {
+      day: "/ jour",
+      week: "/ semaine",
+      weekend: "/ fin de semaine",
+      month: "/ mois",
+    },
   },
   categoryPage: {
     back: "Tous nos équipements",
@@ -405,7 +410,12 @@ const en: Dict = {
     subtitle: "Everything you need for your projects",
     checkAvailability: "Check availability",
     request: "Request this equipment",
-    perDay: "/ day",
+    periods: {
+      day: "/ day",
+      week: "/ week",
+      weekend: "/ weekend",
+      month: "/ month",
+    },
   },
   categoryPage: {
     back: "All our equipment",

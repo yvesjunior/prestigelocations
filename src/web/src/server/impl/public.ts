@@ -58,6 +58,9 @@ export async function loadCatalog(): Promise<CatalogData> {
       published: e.published,
       imageKey: e.imageKey,
       dailyPriceCents: e.dailyPriceCents,
+      weeklyPriceCents: e.weeklyPriceCents,
+      weekendPriceCents: e.weekendPriceCents,
+      monthlyPriceCents: e.monthlyPriceCents,
       position: e.position,
     })),
   };

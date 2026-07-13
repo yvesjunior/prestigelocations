@@ -81,9 +81,13 @@ export const equipments = pgTable(
     formLabelEn: text("form_label_en"),
     status: equipmentStatus("status").notNull().default("disponible"),
     imageKey: text("image_key"),
-    // Prix de location par jour, en cents (optionnel). Affiché sur le site
-    // seulement si le réglage « afficher les tarifs » est activé.
+    // Tarifs de location en cents (chacun optionnel) : jour, semaine, fin de
+    // semaine, mois. Affichés sur le site seulement si le réglage « afficher les
+    // tarifs » est activé ; seules les périodes renseignées sont montrées.
     dailyPriceCents: integer("daily_price_cents"),
+    weeklyPriceCents: integer("weekly_price_cents"),
+    weekendPriceCents: integer("weekend_price_cents"),
+    monthlyPriceCents: integer("monthly_price_cents"),
     published: boolean("published").notNull().default(true),
     position: integer("position").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -29,6 +29,9 @@ export type AdminEquipment = {
   status: "disponible" | "bientot" | "sur_demande";
   imageKey: string | null;
   dailyPriceCents: number | null;
+  weeklyPriceCents: number | null;
+  weekendPriceCents: number | null;
+  monthlyPriceCents: number | null;
   published: boolean;
   position: number;
 };
@@ -126,6 +129,9 @@ const equipmentInput = z.object({
   status: z.enum(["disponible", "bientot", "sur_demande"]),
   imageKey: z.string().nullable(),
   dailyPriceCents: z.number().int().min(0).nullable(),
+  weeklyPriceCents: z.number().int().min(0).nullable(),
+  weekendPriceCents: z.number().int().min(0).nullable(),
+  monthlyPriceCents: z.number().int().min(0).nullable(),
   published: z.boolean(),
   position: z.number().int().min(0),
 });

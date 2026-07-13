@@ -80,6 +80,9 @@ export async function listEquipments(): Promise<AdminEquipment[]> {
       status: equipments.status,
       imageKey: equipments.imageKey,
       dailyPriceCents: equipments.dailyPriceCents,
+      weeklyPriceCents: equipments.weeklyPriceCents,
+      weekendPriceCents: equipments.weekendPriceCents,
+      monthlyPriceCents: equipments.monthlyPriceCents,
       published: equipments.published,
       position: equipments.position,
     })
