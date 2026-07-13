@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { Pencil, Plus } from "lucide-react";
+import { Eye, Plus } from "lucide-react";
 import { listEquipmentsFn, updateEquipmentFn } from "@/server/admin";
 import { iconActionCls } from "@/components/admin/action-icons";
 
@@ -81,11 +81,11 @@ function EquipmentListPage() {
                   <Link
                     to="/admin/equipements/$id"
                     params={{ id: String(e.id) }}
-                    title="Modifier l'équipement"
-                    className={`inline-flex ${iconActionCls.edit}`}
+                    title="Voir la fiche (modifier / supprimer)"
+                    className={`inline-flex ${iconActionCls.view}`}
                   >
-                    <Pencil className="h-4 w-4" />
-                    <span className="sr-only">Modifier</span>
+                    <Eye className="h-4 w-4" />
+                    <span className="sr-only">Voir</span>
                   </Link>
                 </td>
               </tr>
