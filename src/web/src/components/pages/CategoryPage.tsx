@@ -59,7 +59,7 @@ export function CategoryPage({ slug }: { slug: string }) {
                   className="flex flex-col overflow-hidden rounded-xl border border-border/60 bg-card"
                 >
                   <CdnImage
-                    imageKey={e.imageKey ?? category.imageKey}
+                    imageKey={e.imageKey}
                     fallbackSrc={BLANK_IMAGE}
                     alt={e.name[lang]}
                     width={800}

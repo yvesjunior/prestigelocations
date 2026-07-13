@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Eye, Plus } from "lucide-react";
 import { listEquipmentsFn, updateEquipmentFn } from "@/server/admin";
 import { iconActionCls } from "@/components/admin/action-icons";
+import { CdnImage } from "@/components/site/CdnImage";
+import { BLANK_IMAGE } from "@/lib/images";
 
 export const Route = createFileRoute("/admin/equipements/")({
   head: () => ({ meta: [{ title: "Équipements | Administration" }] }),
@@ -76,6 +78,7 @@ function EquipmentListPage() {
         <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-border/60 bg-card text-left text-xs tracking-wider text-primary uppercase">
+              <th className="px-4 py-3">Photo</th>
               <th className="px-4 py-3">Nom (FR)</th>
               <th className="px-4 py-3">Code</th>
               <th className="px-4 py-3">Catégorie</th>
@@ -88,6 +91,16 @@ function EquipmentListPage() {
           <tbody>
             {filtered.map((e) => (
               <tr key={e.id} className="border-b border-border/40 last:border-0 hover:bg-card/60">
+                <td className="px-4 py-2">
+                  <CdnImage
+                    imageKey={e.imageKey}
+                    fallbackSrc={BLANK_IMAGE}
+                    alt={e.nameFr}
+                    width={64}
+                    height={48}
+                    className="h-10 w-14 rounded border border-border/60 object-cover"
+                  />
+                </td>
                 <td className="px-4 py-3 font-medium">{e.nameFr}</td>
                 <td className="px-4 py-3 text-muted-foreground">{e.code ?? "—"}</td>
                 <td className="px-4 py-3 text-muted-foreground">{e.categoryName}</td>
