@@ -47,6 +47,26 @@ export const PAGE_SECTIONS: PageSection[] = [
     ],
   },
   {
+    key: "equipements",
+    label: "Équipements",
+    fields: [
+      { path: "equipmentPage.eyebrow", label: "Pré-titre" },
+      { path: "equipmentPage.title", label: "Titre de page" },
+      { path: "equipmentPage.subtitle", label: "Sous-titre" },
+      {
+        path: "equipmentPage.checkAvailability",
+        label: "Bouton « Vérifier la disponibilité » (mode avancé)",
+      },
+      { path: "equipmentPage.request", label: "Bouton « Demander cet équipement » (mode basic)" },
+      { path: "categoryPage.back", label: "Lien retour (« Tous nos équipements »)" },
+      {
+        path: "categoryPage.empty",
+        label: "Message quand une catégorie n'a aucun équipement",
+        textarea: true,
+      },
+    ],
+  },
+  {
     key: "services",
     label: "Services",
     fields: [
