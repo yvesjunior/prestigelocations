@@ -71,16 +71,19 @@ export function Footer() {
             {t.footer.navigation}
           </h3>
           <ul className="mt-4 space-y-2.5">
-            {t.header.nav.map((item) => (
-              <li key={item.key}>
-                <Link
-                  to={pagePaths[item.key][lang]}
-                  className="text-sm text-foreground/80 transition-colors hover:text-primary"
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
+            {/* « Contact » retiré ici : les coordonnées figurent déjà dans la colonne Contact. */}
+            {t.header.nav
+              .filter((item) => item.key !== "contact")
+              .map((item) => (
+                <li key={item.key}>
+                  <Link
+                    to={pagePaths[item.key][lang]}
+                    className="text-sm text-foreground/80 transition-colors hover:text-primary"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
           </ul>
         </div>
 
