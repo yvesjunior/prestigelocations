@@ -11,9 +11,11 @@ export const contactInfoSchema = z.object({
 
 export type ContactInfo = z.infer<typeof contactInfoSchema>;
 
+// Placeholder neutre uniquement : les vraies coordonnées vivent en BD (clé
+// settings "contact", éditée dans l'admin). Ne jamais coder les vraies valeurs ici.
 export const DEFAULT_CONTACT: ContactInfo = {
-  phone: "819-269-3129",
-  email: "prestigelocations@outlook.com",
+  phone: "000-000-0000",
+  email: "contact@example.com",
 };
 
 export function phoneHref(phone: string): string {
