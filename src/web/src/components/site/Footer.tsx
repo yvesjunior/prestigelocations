@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Mail, MapPin, Phone } from "lucide-react";
 import logoDefault from "@/assets/logo.png";
 import { pagePaths, useLang, useT } from "@/lib/i18n";
-import { phoneHref } from "@/lib/contact";
+import { phoneHref, socialHref } from "@/lib/contact";
 import { useContact } from "@/lib/useContact";
 import { useBranding } from "@/lib/useBranding";
 import { imageUrl } from "@/lib/images";
@@ -38,6 +38,9 @@ export function Footer() {
   const contact = useContact();
   const { logoKey } = useBranding();
   const logo = imageUrl(logoKey, { h: 128 }) ?? logoDefault;
+  // Icônes sociales affichées seulement quand l'URL est définie dans l'admin.
+  const facebookUrl = socialHref(contact.facebook);
+  const instagramUrl = socialHref(contact.instagram);
 
   return (
     <footer className="border-t border-border/60 bg-surface">
@@ -140,22 +143,32 @@ export function Footer() {
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} Prestige Locations. {t.footer.rights}
           </p>
-          <div className="flex items-center gap-3">
-            <a
-              href="#"
-              aria-label="Facebook"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
-            >
-              <FacebookIcon className="h-4 w-4" />
-            </a>
-            <a
-              href="#"
-              aria-label="Instagram"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
-            >
-              <InstagramIcon className="h-4 w-4" />
-            </a>
-          </div>
+          {(facebookUrl || instagramUrl) && (
+            <div className="flex items-center gap-3">
+              {facebookUrl && (
+                <a
+                  href={facebookUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                >
+                  <FacebookIcon className="h-4 w-4" />
+                </a>
+              )}
+              {instagramUrl && (
+                <a
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                >
+                  <InstagramIcon className="h-4 w-4" />
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </footer>

@@ -13,6 +13,8 @@ export function ContactSettings({ contact }: { contact: ContactInfo }) {
   const router = useRouter();
   const [phone, setPhone] = useState(contact.phone);
   const [email, setEmail] = useState(contact.email);
+  const [facebook, setFacebook] = useState(contact.facebook ?? "");
+  const [instagram, setInstagram] = useState(contact.instagram ?? "");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -21,7 +23,14 @@ export function ContactSettings({ contact }: { contact: ContactInfo }) {
     setBusy(true);
     setMessage(null);
     try {
-      await updateContactFn({ data: { phone: phone.trim(), email: email.trim() } });
+      await updateContactFn({
+        data: {
+          phone: phone.trim(),
+          email: email.trim(),
+          facebook: facebook.trim() || null,
+          instagram: instagram.trim() || null,
+        },
+      });
       setMessage({ ok: true, text: "Coordonnées enregistrées — le site public est à jour." });
       router.invalidate();
     } catch (err) {
@@ -67,7 +76,29 @@ export function ContactSettings({ contact }: { contact: ContactInfo }) {
             className={inputCls}
           />
         </div>
+        <div>
+          <label className={labelCls}>Facebook (URL)</label>
+          <input
+            value={facebook}
+            onChange={(e) => setFacebook(e.target.value)}
+            placeholder="https://facebook.com/votrepage"
+            className={inputCls}
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Instagram (URL)</label>
+          <input
+            value={instagram}
+            onChange={(e) => setInstagram(e.target.value)}
+            placeholder="https://instagram.com/votrecompte"
+            className={inputCls}
+          />
+        </div>
       </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Les icônes de réseaux sociaux du pied de page s'affichent seulement quand l'URL est
+        renseignée.
+      </p>
       <div className="mt-3 flex items-center gap-3">
         <button type="submit" disabled={busy} className="btn-gold-outline disabled:opacity-60">
           {busy ? "Enregistrement…" : "Enregistrer les coordonnées"}
