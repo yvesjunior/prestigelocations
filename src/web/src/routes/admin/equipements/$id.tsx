@@ -1,4 +1,4 @@
-import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, notFound, useNavigate, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { EquipmentForm } from "@/components/admin/EquipmentForm";
 import { EquipmentAvailability } from "@/components/admin/EquipmentAvailability";
@@ -29,6 +29,7 @@ export const Route = createFileRoute("/admin/equipements/$id")({
 function EditEquipmentPage() {
   const { equipment, categories, orders } = Route.useLoaderData();
   const navigate = useNavigate();
+  const router = useRouter();
   const advanced = useIsAdvanced();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +51,9 @@ function EditEquipmentPage() {
             setError(null);
             try {
               await updateEquipmentFn({ data: { id: equipment.id, ...values } });
+              // Vider le cache du routeur pour que la liste ET la fiche montrent
+              // les nouvelles valeurs sans rafraîchir la page.
+              await router.invalidate();
               navigate({ to: "/admin/equipements" });
             } catch (err) {
               setError(err instanceof Error ? err.message : "Erreur à l'enregistrement.");
@@ -75,6 +79,7 @@ function EditEquipmentPage() {
                 }
                 await deleteEquipmentFn({ data: { id: equipment.id, force: true } });
               }
+              await router.invalidate();
               navigate({ to: "/admin/equipements" });
             } catch (err) {
               setError(err instanceof Error ? err.message : "Erreur à la suppression.");

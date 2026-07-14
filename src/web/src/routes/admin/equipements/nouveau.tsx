@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { EquipmentForm } from "@/components/admin/EquipmentForm";
 import { createEquipmentFn, listCategoriesFn } from "@/server/admin";
@@ -12,6 +12,7 @@ export const Route = createFileRoute("/admin/equipements/nouveau")({
 function NewEquipmentPage() {
   const { categories } = Route.useLoaderData();
   const navigate = useNavigate();
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +31,7 @@ function NewEquipmentPage() {
             setError(null);
             try {
               await createEquipmentFn({ data: values });
+              await router.invalidate();
               navigate({ to: "/admin/equipements" });
             } catch (err) {
               setError(err instanceof Error ? err.message : "Erreur à la création.");
