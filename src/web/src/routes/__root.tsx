@@ -13,6 +13,7 @@ import type { ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
+import { StructuredData } from "@/components/site/StructuredData";
 import { ThemeTweaker } from "@/components/dev/ThemeTweaker";
 import {
   getAboutFn,
@@ -201,6 +202,8 @@ function RootComponent() {
         <Outlet />
       ) : (
         <div className="flex min-h-screen flex-col">
+          {/* Données structurées LocalBusiness (SEO) — site public uniquement. */}
+          <StructuredData />
           <Header />
           <main className="flex-1">
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
