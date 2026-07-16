@@ -134,7 +134,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       meta: [
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
-        { title: "Prestige Locations | Location d'équipements" },
+        { title: "Location d'équipements au Centre-du-Québec | Prestige Locations" },
         {
           name: "description",
           // Téléphone depuis la BD (repli sur le défaut si le loader a échoué).
@@ -143,7 +143,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { name: "author", content: "Prestige Locations" },
         {
           property: "og:title",
-          content: "Prestige Locations | Location d'équipements",
+          content: "Location d'équipements au Centre-du-Québec | Prestige Locations",
         },
         {
           property: "og:description",

@@ -119,33 +119,33 @@ const fr = {
   },
   meta: {
     home: {
-      title: "Prestige Locations | Location d'équipements",
+      title: "Location d'équipements au Centre-du-Québec | Prestige Locations",
       description:
         "Location d'équipements fiables au Centre-du-Québec : mini-pelle, remorques, compacteurs et plus. Simple, rapide et sans tracas. {phone}.",
       ogDescription:
         "Le bon équipement, au bon moment. Machinerie, remorques et petits équipements en location à la journée, semaine ou mois.",
     },
     equipment: {
-      title: "Équipements en location | Prestige Locations",
+      title: "Équipements en location au Centre-du-Québec | Prestige Locations",
       description:
         "Mini-pelle, tracteur compact, remorques dompeur, fermées et plateformes, compacteurs, scies à béton et plus en location au Centre-du-Québec.",
       ogDescription: "Machinerie, remorques et petits équipements en location au Centre-du-Québec.",
     },
     services: {
-      title: "Services de location | Prestige Locations",
+      title: "Services de location au Centre-du-Québec | Prestige Locations",
       description:
         "Location à la journée, à la semaine ou au mois, avec livraison disponible dans tout le Centre-du-Québec.",
       ogDescription:
         "Des formules flexibles : journée, semaine, mois et livraison sur le chantier.",
     },
     about: {
-      title: "À propos | Prestige Locations",
+      title: "À propos | Prestige Locations, Centre-du-Québec",
       description:
         "Prestige Locations, votre partenaire de confiance pour la location d'équipements de qualité à Wôlinak et dans tout le Centre-du-Québec.",
       ogDescription: "Votre partenaire de confiance pour la location d'équipements de qualité.",
     },
     contact: {
-      title: "Contact & Réservation | Prestige Locations",
+      title: "Contact & réservation au Centre-du-Québec | Prestige Locations",
       description:
         "Réservez votre équipement dès aujourd'hui. Appelez le {phone} ou écrivez-nous — réponse rapide garantie.",
       ogDescription: "Réservez votre équipement dès aujourd'hui. Réponse rapide garantie.",
@@ -373,32 +373,32 @@ const en: Dict = {
   },
   meta: {
     home: {
-      title: "Prestige Locations | Equipment Rentals",
+      title: "Equipment Rentals in Centre-du-Québec | Prestige Locations",
       description:
         "Reliable equipment rentals in Centre-du-Québec: mini excavator, trailers, compactors and more. Simple, fast and hassle-free. {phone}.",
       ogDescription:
         "The right equipment, at the right time. Machinery, trailers and small equipment for rent by the day, week or month.",
     },
     equipment: {
-      title: "Equipment for Rent | Prestige Locations",
+      title: "Equipment for Rent in Centre-du-Québec | Prestige Locations",
       description:
         "Mini excavator, compact tractor, dump, enclosed and flatbed trailers, compactors, concrete saws and more for rent in Centre-du-Québec.",
       ogDescription: "Machinery, trailers and small equipment for rent in Centre-du-Québec.",
     },
     services: {
-      title: "Rental Services | Prestige Locations",
+      title: "Rental Services in Centre-du-Québec | Prestige Locations",
       description:
         "Daily, weekly or monthly rentals, with delivery available throughout the Centre-du-Québec region.",
       ogDescription: "Flexible plans: day, week, month and on-site delivery.",
     },
     about: {
-      title: "About Us | Prestige Locations",
+      title: "About Us | Prestige Locations, Centre-du-Québec",
       description:
         "Prestige Locations, your trusted partner for quality equipment rentals in Wôlinak and throughout Centre-du-Québec.",
       ogDescription: "Your trusted partner for quality equipment rentals.",
     },
     contact: {
-      title: "Contact & Booking | Prestige Locations",
+      title: "Contact & Booking in Centre-du-Québec | Prestige Locations",
       description:
         "Book your equipment today. Call {phone} or write to us — fast response guaranteed.",
       ogDescription: "Book your equipment today. Fast response guaranteed.",
