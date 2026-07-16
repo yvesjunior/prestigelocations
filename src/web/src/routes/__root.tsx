@@ -138,7 +138,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         {
           name: "description",
           // Téléphone depuis la BD (repli sur le défaut si le loader a échoué).
-          content: `Location d'équipements fiables à Sherbrooke : mini-pelle, remorques, compacteurs et plus. Simple, rapide et sans tracas. ${loaderData?.contact.phone ?? DEFAULT_CONTACT.phone}.`,
+          content: `Location d'équipements fiables au Centre-du-Québec : mini-pelle, remorques, compacteurs et plus. Simple, rapide et sans tracas. ${loaderData?.contact.phone ?? DEFAULT_CONTACT.phone}.`,
         },
         { name: "author", content: "Prestige Locations" },
         {

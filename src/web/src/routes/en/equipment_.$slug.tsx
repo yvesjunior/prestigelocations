@@ -24,6 +24,10 @@ export const Route = createFileRoute("/en/equipment_/$slug")({
     links: BASE_URL
       ? [
           {
+            rel: "canonical",
+            href: `${BASE_URL}${categoryPagePath(params.slug, "en")}`,
+          },
+          {
             rel: "alternate",
             hrefLang: "fr",
             href: `${BASE_URL}${categoryPagePath(params.slug, "fr")}`,
