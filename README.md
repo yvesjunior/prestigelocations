@@ -61,6 +61,7 @@ npm run db:setup
 | `npm run dev` | Serveur de dev (`@prestige/web`), port 8080 |
 | `npm run build` | Build de production |
 | `npm run preview` | Aperçu du build |
+| `npm run prod [up\|restart\|logs\|down]` | Pile de **production** (web seul, Postgres hôte) — voir Déploiement |
 | `npm run lint` / `npm run format` | ESLint / Prettier |
 | `npm run db:generate` | Générer une migration depuis le schéma Drizzle |
 | `npm run db:migrate` | Appliquer les migrations |
@@ -151,8 +152,13 @@ sur l'hôte** (un serveur Postgres partagé, idéalement **une base par site**).
    ```
 3. **Lancer web seul** (ne PAS lancer `db:setup`/`seed` : schéma + données viennent de l'import) :
    ```sh
+   npm run prod                 # raccourci de scripts/prod.sh (build + up -d)
+   # équivaut à :
    docker compose --env-file .env -f infra/docker-compose.prod.yml up -d --build
    ```
+   Autres actions : `npm run prod restart` (recrée le conteneur après un changement de
+   `.env` — ex. `SENDGRID_FROM` —, sans rebuild), `npm run prod logs` (suivi des logs),
+   `npm run prod down` (arrêt).
 4. **Après import** : changer le mot de passe admin (Admin › Mon compte).
 5. **Exposer le site** :
    - **Tunnel Cloudflare nommé** (`cloudflared`) : réseau privé, sans IP publique ni port

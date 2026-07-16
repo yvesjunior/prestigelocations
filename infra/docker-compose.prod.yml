@@ -3,8 +3,8 @@
 #
 #   docker compose --env-file .env -f infra/docker-compose.prod.yml up -d --build
 #
-# `extends` réutilise le service web de docker-compose.yml (build, env, healthcheck)
-# mais ne copie PAS son `depends_on: db` → le conteneur Postgres n'est jamais lancé.
+# `extends` réutilise le service web de docker-compose.yml (build, env, healthcheck).
+# Le conteneur `db` n'existe que dans l'overlay dev → jamais lancé en prod.
 #
 # DATABASE_URL (dans .env) doit pointer vers le Postgres de l'hôte. Depuis le
 # conteneur, l'hôte est joignable via `host.docker.internal` (mappé ci-dessous sur
@@ -33,9 +33,8 @@ services:
     # Postgres de l'hôte écoute sur 127.0.0.1 uniquement → réseau hôte pour que le
     # conteneur atteigne localhost:5432. En réseau hôte l'app écoute sur $WEB_PORT.
     network_mode: "host"
-    # `extends` hérite du `depends_on: db` de la base ; on l'annule ici (pas de
-    # conteneur db en prod, la BD est sur l'hôte) sinon compose refuse le projet.
-    depends_on: !reset null
+    # Pas de `depends_on` : la base ne définit plus de conteneur `db` (il vit dans
+    # l'overlay dev uniquement) ; en prod la BD est sur l'hôte.
     # Le healthcheck de base cible 3000 en dur → le réaligner sur WEB_PORT.
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:${WEB_PORT:-3000}/fr"]

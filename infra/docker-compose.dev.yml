@@ -1,10 +1,31 @@
-# Overlay dev — publie les ports sur la machine locale.
+# Overlay dev — AJOUTE le conteneur `db` (Postgres local) et publie les ports.
+# Le conteneur `db` n'existe QUE dans cet overlay (ni dans la base, ni en prod).
 # Les ports HÔTE sont configurables via .env (utile pour lancer plusieurs sites
 # sur un même serveur). Le port INTERNE des conteneurs ne change pas (3000 / 5432).
 services:
   web:
     ports:
       - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
   db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-prestige}
+      POSTGRES_USER: ${POSTGRES_USER:-prestige}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-prestige}
+    volumes:
+      - db-data:/var/lib/postgresql/data
     ports:
       - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-prestige} -d ${POSTGRES_DB:-prestige}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db-data:

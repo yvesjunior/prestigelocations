@@ -1,5 +1,10 @@
-# Base commune dev/prod — aucun port publié ici (voir les overlays .dev / .prod).
-# Toujours lancer depuis la racine du dépôt :
+# Base commune dev/prod — service `web` UNIQUEMENT (aucun conteneur `db`, aucun
+# port publié : voir les overlays .dev / .prod).
+#
+#   • dev  : base + overlay .dev  → ajoute le conteneur `db` + les ports publiés
+#   • prod : overlay .prod SEUL   → web seul, connecté au Postgres de l'hôte
+#
+# Ne JAMAIS lancer ce fichier seul : web n'a pas de base de données sans overlay.
 #   docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.dev.yml up
 
 name: prestige-locations
@@ -15,6 +20,8 @@ services:
         VITE_IMAGEKIT_URL_ENDPOINT: ${VITE_IMAGEKIT_URL_ENDPOINT:-}
     restart: unless-stopped
     environment:
+      # Défaut = conteneur `db` de l'overlay dev. En prod l'overlay .prod remplace
+      # ce DATABASE_URL par le Postgres de l'hôte.
       DATABASE_URL: postgres://${POSTGRES_USER:-prestige}:${POSTGRES_PASSWORD:-prestige}@db:5432/${POSTGRES_DB:-prestige}
       ADMIN_NAME: ${ADMIN_NAME:-}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
@@ -28,30 +35,9 @@ services:
       SITE_MODE: ${SITE_MODE:-basic}
       # Environnement : dev = aides de test (ex. identifiants sur /admin/login). Défaut prod.
       ENV: ${ENV:-prod}
-    depends_on:
-      db:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/fr"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
-
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-prestige}
-      POSTGRES_USER: ${POSTGRES_USER:-prestige}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-prestige}
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-prestige} -d ${POSTGRES_DB:-prestige}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  db-data:

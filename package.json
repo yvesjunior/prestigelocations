@@ -8,6 +8,7 @@
     "dev": "npm run dev -w @prestige/web",
     "build": "npm run build -w @prestige/web",
     "preview": "npm run preview -w @prestige/web",
+    "prod": "bash scripts/prod.sh",
     "lint": "npm run lint -w @prestige/web",
     "format": "npm run format -w @prestige/web",
     "db:generate": "npm run generate -w @prestige/database",
