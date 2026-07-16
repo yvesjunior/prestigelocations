@@ -119,7 +119,7 @@ const fr = {
   },
   meta: {
     home: {
-      title: "Prestige Locations | Location d'équipements à Sherbrooke",
+      title: "Prestige Locations | Location d'équipements",
       description:
         "Location d'équipements fiables à Sherbrooke : mini-pelle, remorques, compacteurs et plus. Simple, rapide et sans tracas. {phone}.",
       ogDescription:
@@ -373,7 +373,7 @@ const en: Dict = {
   },
   meta: {
     home: {
-      title: "Prestige Locations | Equipment Rentals in Sherbrooke",
+      title: "Prestige Locations | Equipment Rentals",
       description:
         "Reliable equipment rentals in Sherbrooke: mini excavator, trailers, compactors and more. Simple, fast and hassle-free. {phone}.",
       ogDescription:

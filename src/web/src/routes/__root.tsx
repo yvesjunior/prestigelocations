@@ -133,7 +133,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       meta: [
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
-        { title: "Prestige Locations | Location d'équipements à Sherbrooke" },
+        { title: "Prestige Locations | Location d'équipements" },
         {
           name: "description",
           // Téléphone depuis la BD (repli sur le défaut si le loader a échoué).
@@ -142,7 +142,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { name: "author", content: "Prestige Locations" },
         {
           property: "og:title",
-          content: "Prestige Locations | Location d'équipements à Sherbrooke",
+          content: "Prestige Locations | Location d'équipements",
         },
         {
           property: "og:description",
