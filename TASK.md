@@ -30,6 +30,31 @@
 
 > **Reprendre ici.** Mettre à jour ce bloc à chaque session (2 lignes max).
 
+- **▶ SESSION 2026-07-15/16 — REPRENDRE ICI.**
+  **Git/push** : `origin` = `https://github.com/yvesjunior/prestigelocations` (HTTPS, repo public).
+  Avant tout push : `gh auth switch --user yvesjunior` (le compte actif revient souvent à `yvesbat`,
+  lecture seule). `develop` poussé jusqu'à `db58d2c` ; **2 commits locaux NON POUSSÉS** :
+  `47236bd` (robots.txt + JSON-LD LocalBusiness) et `96e7fb4` (horaires JSON-LD). → à pousser.
+  **Build Docker** : la connexion est instable → BuildKit échoue sur « load metadata » de
+  `node:22-alpine`. Utiliser **`DOCKER_BUILDKIT=0`** pour builder, et **`--force-recreate`** car
+  `up -d --build` ne recrée pas toujours le conteneur (image restait périmée).
+  **BD dev = VRAIES données client** (équipements renommés/ajoutés + tarifs saisis via l'admin ;
+  contact `info@prestigelocations.ca` / `819-384-4169` ; région Wôlinak). **NE PAS re-seeder**
+  (`db:seed`/`db:setup`) — ça réinsère l'ancien catalogue. Export dispo : `prestige-db-export.sql`
+  (gitignoré). **Prod** : `docker-compose.prod.yml` (web seul, `network_mode host`, Postgres de
+  l'hôte sur `localhost:5432`, `PORT=WEB_PORT`) via `npm run prod` ; importer le dump dans une base
+  dédiée de l'hôte, **sans** seed.
+  **SEO fait** : titre/og sans « Sherbrooke » (FR « Location d'équipements »), `robots.txt`,
+  JSON-LD LocalBusiness (nom, url, tél/courriel BD, Wôlinak, horaires **Mo-Sa 08:00-18:00 —
+  hypothèse à confirmer**, logo). **SEO à faire (côté client / prod)** : (1) déployer sur
+  `prestigelocations.ca` avec **`VITE_BASE_URL=https://prestigelocations.ca`** (sinon sitemap/
+  hreflang/canonical vides) ; (2) **Google Search Console** (vérif via TXT DNS GoDaddy, soumettre
+  `/sitemap.xml`) ; (3) **Google Business Profile** (fiche locale — levier n°1) ; (4) optionnel
+  `og:image` (~1200×630, pas encore fait). **DNS/courriel** : DNS chez **GoDaddy** ; pour l'envoi
+  SendGrid → authentifier le domaine (CNAME DKIM + SPF) et un expéditeur vérifié ; réception via
+  Zoho/Cloudflare Email Routing. **Tunnel Cloudflare** : les quick tunnels flottent sur cette
+  connexion → privilégier un **tunnel nommé** pour la prod. « Sherbrooke » subsiste dans les
+  **meta descriptions** + textes marketing (non modifiés — décider Wôlinak/région/retrait).
 - **▶ PHASES 1–4 TERMINÉES ; Phase 4+ enrichie (sessions 2026-07-12).**
   **Interrupteur `SITE_MODE` basic/advanced (commit `74d2bfc`)** — variable d'env (défaut
   « basic »), lue serveur (`getSiteModeFn`), exposée via loader racine (`useMode`/`useIsAdvanced`),
