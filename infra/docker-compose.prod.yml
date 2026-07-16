@@ -27,10 +27,18 @@ services:
     environment:
       # Remplace le DATABASE_URL de la base (qui pointe sur le conteneur @db).
       DATABASE_URL: ${DATABASE_URL}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    ports:
-      - "${WEB_PORT:-3000}:3000"
+      # En réseau hôte il n'y a pas de mapping de ports : l'app (Nitro) écoute
+      # directement sur ce port sur l'hôte. Piloté par WEB_PORT du .env.
+      PORT: ${WEB_PORT:-3000}
+    # Postgres de l'hôte écoute sur 127.0.0.1 uniquement → réseau hôte pour que le
+    # conteneur atteigne localhost:5432. En réseau hôte l'app écoute sur $WEB_PORT.
+    network_mode: "host"
+    # `extends` hérite du `depends_on: db` de la base ; on l'annule ici (pas de
+    # conteneur db en prod, la BD est sur l'hôte) sinon compose refuse le projet.
+    depends_on: !reset null
+    # Le healthcheck de base cible 3000 en dur → le réaligner sur WEB_PORT.
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:${WEB_PORT:-3000}/fr"]
 
 # Variante si le Postgres de l'hôte n'écoute que sur localhost : utiliser le
 # réseau de l'hôte (le conteneur partage la pile réseau, DATABASE_URL peut alors
