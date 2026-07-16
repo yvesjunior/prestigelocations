@@ -1,8 +1,10 @@
 # Overlay dev — publie les ports sur la machine locale.
+# Les ports HÔTE sont configurables via .env (utile pour lancer plusieurs sites
+# sur un même serveur). Le port INTERNE des conteneurs ne change pas (3000 / 5432).
 services:
   web:
     ports:
-      - "3000:3000"
+      - "${WEB_PORT:-3000}:3000"
   db:
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"

@@ -74,6 +74,7 @@ Les variables `VITE_*` sont **bakées au build** (publiques, jamais de secret).
 
 | Variable | Rôle |
 |---|---|
+| `WEB_PORT` / `DB_PORT` | Ports **hôte** publiés par Docker (défauts 3000 / 5432) — un par site sur un serveur mutualisé |
 | `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | Base de données |
 | `DATABASE_URL` | `localhost` hors conteneur (`npm run dev`), `db` dans compose |
 | `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Superadmin créé au premier seed (mot de passe ≥ 10 car.) |
