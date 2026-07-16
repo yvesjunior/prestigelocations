@@ -32,6 +32,13 @@ export function StructuredData() {
       addressCountry: "CA",
     },
     areaServed: { "@type": "AdministrativeArea", name: "Québec" },
+    // Horaires 8h–18h, lun.–sam. (hypothèse — à ajuster si 7j/7 ou autre).
+    openingHoursSpecification: {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+      opens: "08:00",
+      closes: "18:00",
+    },
   };
   if (logo) data.image = logo;
 
