@@ -1,0 +1,40 @@
+# Overlay PROD — web SEUL, connecté à un PostgreSQL DÉJÀ présent sur l'hôte
+# (aucun conteneur `db`). À utiliser SEUL, PAS avec la base ni l'overlay dev :
+#
+#   docker compose --env-file .env -f infra/docker-compose.prod.yml up -d --build
+#
+# `extends` réutilise le service web de docker-compose.yml (build, env, healthcheck)
+# mais ne copie PAS son `depends_on: db` → le conteneur Postgres n'est jamais lancé.
+#
+# DATABASE_URL (dans .env) doit pointer vers le Postgres de l'hôte. Depuis le
+# conteneur, l'hôte est joignable via `host.docker.internal` (mappé ci-dessous sur
+# la passerelle). Exemple .env de prod :
+#   DATABASE_URL=postgres://prestige:MOT_DE_PASSE@host.docker.internal:5432/prestige
+#   ENV=prod
+#   SITE_MODE=basic          # ou advanced
+#   VITE_BASE_URL=https://prestigelocations.ca
+#
+# ⚠️ Le Postgres de l'hôte doit accepter les connexions du réseau Docker
+# (listen_addresses + pg_hba.conf), OU utiliser le réseau hôte (voir la note en bas).
+
+name: prestige-locations
+
+services:
+  web:
+    extends:
+      file: docker-compose.yml
+      service: web
+    environment:
+      # Remplace le DATABASE_URL de la base (qui pointe sur le conteneur @db).
+      DATABASE_URL: ${DATABASE_URL}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+
+# Variante si le Postgres de l'hôte n'écoute que sur localhost : utiliser le
+# réseau de l'hôte (le conteneur partage la pile réseau, DATABASE_URL peut alors
+# viser localhost:5432). Remplacer le bloc `ports`/`extra_hosts` ci-dessus par :
+#   network_mode: "host"
+# et dans .env : DATABASE_URL=postgres://prestige:MOT_DE_PASSE@localhost:5432/prestige
+# (avec network_mode host, WEB_PORT est ignoré : l'app écoute directement sur 3000).

@@ -129,17 +129,51 @@ Tout le contenu se gère depuis le tableau de bord :
   `page_content`, `branding`, `pricing`, `hero`, `about`) et les tables `categories` /
   `equipments`.
 
-## Déploiement
+## Déploiement (prod : Postgres sur l'hôte, pas de conteneur `db`)
 
-1. Renseigner un `.env` de production (mot de passe DB fort, `ENV=prod`, `SITE_MODE` voulu,
-   `VITE_BASE_URL=https://…`, clés ImageKit/SendGrid, **expéditeur SendGrid vérifié**).
-2. Construire et lancer l'image (`up -d --build`), puis `npm run db:setup`.
-3. Exposer le site. Options :
-   - **Tunnel Cloudflare nommé** (`cloudflared`) : héberge le serveur sur un réseau privé
-     sans IP publique ni port ouvert, sur `prestigelocations.ca` (TLS gratuit, reconnexion auto).
-   - Reverse-proxy classique (Caddy/Nginx) + certificat TLS.
-4. Pour recevoir/envoyer des courriels : configurer les enregistrements DNS
-   (MX pour la réception, CNAME DKIM + SPF pour l'envoi via SendGrid).
+En production l'app tourne **web seul** et se connecte à un **PostgreSQL déjà présent
+sur l'hôte** (un serveur Postgres partagé, idéalement **une base par site**). On utilise
+`infra/docker-compose.prod.yml` (web uniquement — aucun conteneur `db`).
+
+1. **Base de données (sur l'hôte)** — créer une base dédiée et y importer le contenu
+   exporté depuis le dev (voir « Exporter / importer la base » ci-dessous) :
+   ```sh
+   createdb prestige                          # ou: psql -c "CREATE DATABASE prestige;"
+   psql -d prestige < prestige-db-export.sql
+   ```
+   Le Postgres de l'hôte doit accepter les connexions du conteneur : soit `listen_addresses`
+   + une ligne `pg_hba.conf` pour le sous-réseau Docker, soit `network_mode: host` (voir le
+   commentaire dans `docker-compose.prod.yml`).
+2. **`.env` de prod** — `ENV=prod`, `SITE_MODE` au choix, `VITE_BASE_URL=https://prestigelocations.ca`,
+   clés ImageKit/SendGrid (**expéditeur SendGrid vérifié**), et le `DATABASE_URL` de l'hôte :
+   ```
+   DATABASE_URL=postgres://prestige:MOT_DE_PASSE@host.docker.internal:5432/prestige
+   ```
+3. **Lancer web seul** (ne PAS lancer `db:setup`/`seed` : schéma + données viennent de l'import) :
+   ```sh
+   docker compose --env-file .env -f infra/docker-compose.prod.yml up -d --build
+   ```
+4. **Après import** : changer le mot de passe admin (Admin › Mon compte).
+5. **Exposer le site** :
+   - **Tunnel Cloudflare nommé** (`cloudflared`) : réseau privé, sans IP publique ni port
+     ouvert, sur `prestigelocations.ca` (TLS gratuit, reconnexion auto).
+   - ou reverse-proxy classique (Caddy/Nginx) + TLS.
+6. **Courriels** : enregistrements DNS (MX pour la réception ; CNAME DKIM + SPF pour l'envoi
+   via SendGrid).
+
+### Exporter / importer la base
+
+```sh
+# Export depuis le dev (conteneur db) — dump SQL portable (schéma + données) :
+docker exec prestige-locations-db-1 pg_dump -U prestige -d prestige \
+  --clean --if-exists --no-owner --no-privileges > prestige-db-export.sql
+
+# Import dans le Postgres de l'hôte de prod (base dédiée) :
+psql -d prestige < prestige-db-export.sql
+```
+> Le dump inclut le schéma, les données et les enregistrements de migration Drizzle —
+> ne pas relancer `db:migrate`/`db:seed` après un import. Les `image_key` pointent vers
+> ImageKit : l'hôte de prod doit utiliser les **mêmes** clés `IMAGEKIT_*`.
 
 ## Structure
 
