@@ -146,7 +146,11 @@ sur l'hôte** (un serveur Postgres partagé, idéalement **une base par site**).
    + une ligne `pg_hba.conf` pour le sous-réseau Docker, soit `network_mode: host` (voir le
    commentaire dans `docker-compose.prod.yml`).
 2. **`.env` de prod** — `ENV=prod`, `SITE_MODE` au choix, `VITE_BASE_URL=https://prestigelocations.ca`,
-   clés ImageKit/SendGrid (**expéditeur SendGrid vérifié**), et le `DATABASE_URL` de l'hôte :
+   clés ImageKit/SendGrid (**expéditeur SendGrid vérifié**), et le `DATABASE_URL` de l'hôte.
+   ⚠️ `VITE_BASE_URL` et `VITE_IMAGEKIT_URL_ENDPOINT` sont **bakées au build** : si elles
+   changent, un `npm run prod restart` ne suffit pas — refaire `npm run prod` (rebuild).
+   Sans `VITE_BASE_URL`, le SEO est amputé (pas de canonical/hreflang/`og:url`, sitemap
+   avec URLs relatives inutilisables) :
    ```
    DATABASE_URL=postgres://prestige:MOT_DE_PASSE@host.docker.internal:5432/prestige
    ```
@@ -166,6 +170,37 @@ sur l'hôte** (un serveur Postgres partagé, idéalement **une base par site**).
    - ou reverse-proxy classique (Caddy/Nginx) + TLS.
 6. **Courriels** : enregistrements DNS (MX pour la réception ; CNAME DKIM + SPF pour l'envoi
    via SendGrid).
+
+### SEO — vérifications après mise en ligne
+
+Le site génère titres/descriptions FR+EN, `canonical` + `hreflang`, Open Graph
+(`og:image` = 1re diapo du héro), `robots.txt`, `sitemap.xml` et des données structurées
+JSON-LD (LocalBusiness, fil d'Ariane, listes Product/Offer avec les tarifs de la BD —
+voir `src/web/src/lib/seo.ts`). Tout est construit au runtime depuis la BD, **sauf**
+`VITE_BASE_URL`/`VITE_IMAGEKIT_URL_ENDPOINT` (au build, voir l'étape 2).
+
+Checklist après chaque déploiement :
+
+1. **Contenu BD côté prod** — le JSON-LD et l'`og:image` suivent la BD de prod :
+   - diaporama du héro (Admin › Pages › Accueil) : sans diapo, `og:image` retombe sur la
+     photo bundlée ;
+   - interrupteur des **tarifs** (Admin › Paramètres) : prix publiés dans le JSON-LD
+     **seulement** s'il est activé.
+2. **Contrôles rapides** (une fois le site servi sur le domaine) :
+   ```sh
+   curl -s https://prestigelocations.ca/fr | grep -a -o '<link rel="canonical"[^>]*>'
+   curl -s https://prestigelocations.ca/sitemap.xml | head    # URLs absolues attendues
+   ```
+   Valider une page catégorie dans le [test de résultats enrichis](https://search.google.com/test/rich-results)
+   (ex. `/fr/equipements/machinerie` : BreadcrumbList + ItemList attendus) et un partage
+   dans le [débogueur Facebook](https://developers.facebook.com/tools/debug/) (`og:image`).
+3. **Google Search Console** — vérifier le domaine (TXT DNS chez GoDaddy), soumettre
+   `/sitemap.xml`. Les entrées « Page with redirect » sont **normales** : ce sont les
+   anciennes URLs sans préfixe (`/`, `/contact`…) qui font un 301 vers `/fr/*`.
+4. **Google Business Profile** — fiche locale (levier n°1 pour « location équipement
+   près de moi »).
+5. La zone desservie du JSON-LD (villes dans
+   `src/web/src/components/site/StructuredData.tsx`) est **à confirmer avec le client**.
 
 ### Exporter / importer la base
 

@@ -30,7 +30,17 @@
 
 > **Reprendre ici.** Mettre à jour ce bloc à chaque session (2 lignes max).
 
-- **▶ SESSION 2026-07-15/16 — REPRENDRE ICI.**
+- **▶ SESSION 2026-07-28 — REPRENDRE ICI.**
+  **SEO tags complétés (NON COMMITÉ)** : `og:image`/`twitter:image` (1re diapo héro ImageKit 1200×630,
+  repli diapo bundlée), `og:url`/`og:locale`/`og:site_name` (racine + `pageHead` + pages catégories),
+  `noindex,nofollow` sur `/admin` (layout). **JSON-LD enrichi (`lib/seo.ts`)** : BreadcrumbList +
+  ItemList Product/Offer (prix BD/jour, seulement si `showDailyPrice`) sur pages catégories,
+  ItemList catégories sur pages Équipements (via meta `"script:ld+json"` + cast `ldMeta`),
+  LocalBusiness étoffé (areaServed 6 villes **à confirmer client**, keywords, additionalType).
+  Vérifié en Docker (build `VITE_BASE_URL=https://prestigelocations.ca`,
+  `DB_PORT=5433` car 5432 occupé par `transportpg`) : canonical/hreflang/og:* SSR OK sur fr/en/catégories,
+  sitemap OK, admin noindex OK. GSC « Page with redirect » = normal (stubs `/`, `/contact`… → 301 `/fr/*`).
+- **▶ SESSION 2026-07-15/16.**
   **Git/push** : `origin` = `https://github.com/yvesjunior/prestigelocations` (HTTPS, repo public).
   Avant tout push : `gh auth switch --user yvesjunior` (le compte actif revient souvent à `yvesbat`,
   lecture seule). `develop` poussé jusqu'à `db58d2c` ; **2 commits locaux NON POUSSÉS** :
