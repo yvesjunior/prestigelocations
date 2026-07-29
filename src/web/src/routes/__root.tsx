@@ -11,6 +11,7 @@ import {
 import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import heroSlide2 from "@/assets/hero-slide-2.webp";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { StructuredData } from "@/components/site/StructuredData";
@@ -26,6 +27,7 @@ import {
   getThemeFn,
 } from "@/server/public";
 import { imageUrl } from "@/lib/images";
+import { BASE_URL } from "@/lib/site";
 import { DEFAULT_CONTACT } from "@/lib/contact";
 import { themeToCss } from "@/lib/theme";
 import { pagePaths, useLang, useT } from "@/lib/i18n";
@@ -130,6 +132,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     // Favicon : logo téléversé (ImageKit) si présent, sinon l'icône bundlée.
     const faviconHref =
       imageUrl(loaderData?.branding?.logoKey, { w: 128, h: 128 }) ?? "/logo-icon.png";
+    // Image de partage (og:image, ~1200×630) : 1re diapo du héro (ImageKit),
+    // sinon la diapo bundlée. Les réseaux sociaux exigent une URL absolue.
+    const ogImage =
+      imageUrl(loaderData?.hero?.slides[0], { w: 1200, h: 630 }) ?? `${BASE_URL}${heroSlide2}`;
     return {
       meta: [
         { charSet: "utf-8" },
@@ -151,7 +157,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             "Le bon équipement, au bon moment. Machinerie, remorques et petits équipements en location à la journée, semaine ou mois.",
         },
         { property: "og:type", content: "website" },
+        { property: "og:site_name", content: "Prestige Locations" },
+        { property: "og:locale", content: "fr_CA" },
+        { property: "og:image", content: ogImage },
+        { property: "og:image:width", content: "1200" },
+        { property: "og:image:height", content: "630" },
         { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:image", content: ogImage },
       ],
       links: [
         { rel: "stylesheet", href: appCss },

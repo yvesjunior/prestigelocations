@@ -575,6 +575,9 @@ export function pageHead(key: PageKey, lang: Lang, phone?: string) {
       { name: "description", content: withPhone(m.description) },
       { property: "og:title", content: m.title },
       { property: "og:description", content: withPhone(m.ogDescription) },
+      { property: "og:locale", content: lang === "fr" ? "fr_CA" : "en_CA" },
+      { property: "og:locale:alternate", content: lang === "fr" ? "en_CA" : "fr_CA" },
+      ...(BASE_URL ? [{ property: "og:url", content: `${BASE_URL}${pagePaths[key][lang]}` }] : []),
     ],
     links: BASE_URL
       ? [

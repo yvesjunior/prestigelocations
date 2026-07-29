@@ -26,6 +26,9 @@ import { getSessionFn, logoutFn, type SessionUser } from "@/server/auth";
 import { useIsAdvanced } from "@/lib/useMode";
 
 export const Route = createFileRoute("/admin")({
+  // robots.txt bloque le crawl de /admin mais pas l'indexation d'URLs connues ;
+  // le noindex ferme cette porte.
+  head: () => ({ meta: [{ name: "robots", content: "noindex, nofollow" }] }),
   beforeLoad: async ({ location }): Promise<{ session: SessionUser | null }> => {
     if (location.pathname === "/admin/login") return { session: null };
     const session = await getSessionFn();
