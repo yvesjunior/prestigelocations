@@ -19,19 +19,37 @@ export function StructuredData() {
   const data: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
+    // Type précis « location d'équipement » (schema.org n'en définit pas).
+    additionalType: "http://www.productontology.org/id/Equipment_rental",
     name: "Prestige Locations",
     description:
-      "Location d'équipements : machinerie, remorques et petits équipements pour vos travaux.",
+      "Location d'équipements pour construction, excavation, terrassement et aménagement : " +
+      "mini-pelle, tracteur compact, remorques (dompeur, fermée, plateforme), compacteurs, " +
+      "scies à béton et petits outils. À la journée, à la semaine ou au mois, avec livraison.",
+    keywords:
+      "location d'équipement, location d'outils, construction, excavation, mini-pelle, " +
+      "remorque, compacteur, terrassement, Centre-du-Québec, equipment rental, tool rental",
     url: site,
     telephone: contact.phone,
     email: contact.email,
+    currenciesAccepted: "CAD",
     address: {
       "@type": "PostalAddress",
       addressLocality: "Wôlinak",
       addressRegion: "QC",
       addressCountry: "CA",
     },
-    areaServed: { "@type": "AdministrativeArea", name: "Québec" },
+    // Villes principales du rayon de service (livraison « dans tout le
+    // Centre-du-Québec » — voir la page Services). À confirmer avec le client.
+    areaServed: [
+      { "@type": "AdministrativeArea", name: "Centre-du-Québec" },
+      { "@type": "City", name: "Wôlinak" },
+      { "@type": "City", name: "Bécancour" },
+      { "@type": "City", name: "Nicolet" },
+      { "@type": "City", name: "Trois-Rivières" },
+      { "@type": "City", name: "Drummondville" },
+      { "@type": "City", name: "Victoriaville" },
+    ],
     // Horaires 8h–18h, lun.–sam. (hypothèse — à ajuster si 7j/7 ou autre).
     openingHoursSpecification: {
       "@type": "OpeningHoursSpecification",

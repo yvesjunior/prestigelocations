@@ -1,18 +1,27 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { CategoryPage } from "@/components/pages/CategoryPage";
 import { categoryPagePath } from "@/lib/i18n";
+import { categoryPageLd, ldMeta } from "@/lib/seo";
 import { BASE_URL } from "@/lib/site";
-import { getCatalogFn } from "@/server/public";
+import { getCatalogFn, getPricingFn } from "@/server/public";
 
 export const Route = createFileRoute("/fr/equipements_/$slug")({
   loader: async ({ params }) => {
-    const catalog = await getCatalogFn();
+    const [catalog, pricing] = await Promise.all([getCatalogFn(), getPricingFn()]);
     const category = catalog.categories.find((c) => c.slug === params.slug);
     if (!category) throw notFound();
-    return { catalog, category };
+    return { catalog, category, pricing };
   },
   head: ({ loaderData, params }) => ({
     meta: [
+      ...(loaderData
+        ? categoryPageLd(
+            loaderData.catalog,
+            loaderData.category,
+            "fr",
+            loaderData.pricing.showDailyPrice,
+          ).map(ldMeta)
+        : []),
       { title: `${loaderData?.category.name.fr ?? "Équipements"} | Prestige Locations` },
       { name: "description", content: loaderData?.category.pageDescription.fr ?? "" },
       {
@@ -20,6 +29,11 @@ export const Route = createFileRoute("/fr/equipements_/$slug")({
         content: `${loaderData?.category.name.fr ?? ""} | Prestige Locations`,
       },
       { property: "og:description", content: loaderData?.category.cardDescription.fr ?? "" },
+      { property: "og:locale", content: "fr_CA" },
+      { property: "og:locale:alternate", content: "en_CA" },
+      ...(BASE_URL
+        ? [{ property: "og:url", content: `${BASE_URL}${categoryPagePath(params.slug, "fr")}` }]
+        : []),
     ],
     links: BASE_URL
       ? [
