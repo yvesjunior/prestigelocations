@@ -11,7 +11,7 @@ de **location d'équipements**. Le contenu du site est **piloté par la base de 
   - `@prestige/web` — [TanStack Start](https://tanstack.com/start) (React 19, SSR), Tailwind CSS 4, TypeScript
   - `@prestige/database` — [Drizzle ORM](https://orm.drizzle.team) + PostgreSQL 16
 - **Médias** : ImageKit (CDN, téléversement depuis l'admin ; repli sur des images bundlées)
-- **Courriel sortant** : SendGrid (API HTTP) — notifications des demandes de réservation
+- **Courriel sortant** : Resend (API HTTP) — notifications des demandes de réservation
 - **Conteneurisation** : Docker + Docker Compose
 
 ## Prérequis
@@ -146,7 +146,8 @@ sur l'hôte** (un serveur Postgres partagé, idéalement **une base par site**).
    + une ligne `pg_hba.conf` pour le sous-réseau Docker, soit `network_mode: host` (voir le
    commentaire dans `docker-compose.prod.yml`).
 2. **`.env` de prod** — `ENV=prod`, `SITE_MODE` au choix, `VITE_BASE_URL=https://prestigelocations.ca`,
-   clés ImageKit/SendGrid (**expéditeur SendGrid vérifié**), et le `DATABASE_URL` de l'hôte.
+   clés ImageKit/Resend (`RESEND_API_KEY` + `MAIL_FROM` sur un **domaine vérifié chez
+   Resend** — `prestigelocations.ca` l'est), et le `DATABASE_URL` de l'hôte.
    ⚠️ `VITE_BASE_URL` et `VITE_IMAGEKIT_URL_ENDPOINT` sont **bakées au build** : si elles
    changent, un `npm run prod restart` ne suffit pas — refaire `npm run prod` (rebuild).
    Sans `VITE_BASE_URL`, le SEO est amputé (pas de canonical/hreflang/`og:url`, sitemap
@@ -168,8 +169,9 @@ sur l'hôte** (un serveur Postgres partagé, idéalement **une base par site**).
    - **Tunnel Cloudflare nommé** (`cloudflared`) : réseau privé, sans IP publique ni port
      ouvert, sur `prestigelocations.ca` (TLS gratuit, reconnexion auto).
    - ou reverse-proxy classique (Caddy/Nginx) + TLS.
-6. **Courriels** : enregistrements DNS (MX pour la réception ; CNAME DKIM + SPF pour l'envoi
-   via SendGrid).
+6. **Courriels** : enregistrements DNS — MX pour la réception (Microsoft 365) ; pour
+   l'envoi via Resend, DKIM `resend._domainkey` + SPF et MX de retour sur `send.`.
+   Déjà en place sur `prestigelocations.ca` (vérifié le 2026-10-13).
 
 ### SEO — vérifications après mise en ligne
 
