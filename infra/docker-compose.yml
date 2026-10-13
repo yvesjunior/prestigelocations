@@ -29,8 +29,8 @@ services:
       IMAGEKIT_PUBLIC_KEY: ${IMAGEKIT_PUBLIC_KEY:-}
       IMAGEKIT_PRIVATE_KEY: ${IMAGEKIT_PRIVATE_KEY:-}
       IMAGEKIT_FOLDER: ${IMAGEKIT_FOLDER:-prestigelocations}
-      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
-      SENDGRID_FROM: ${SENDGRID_FROM:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-}
       # Mode du site : basic (défaut) ou advanced. Lu au runtime (redémarrer suffit).
       SITE_MODE: ${SITE_MODE:-basic}
       # Environnement : dev = aides de test (ex. identifiants sur /admin/login). Défaut prod.

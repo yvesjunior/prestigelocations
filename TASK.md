@@ -137,10 +137,20 @@
   4B.4 (calendrier) · 4B.5 (rapports) · 4B.6 (thème).
 - **🧍 En attente client** : domaine (Phase 5), validation contenu/photos réelles + liens
   Facebook/Instagram + zone/adresse (Phase 6).
-- **📧 SendGrid (API HTTP)** — implémenté + vérifié. Env : `SENDGRID_API_KEY` + `SENDGRID_FROM`.
-  ⚠️ `SENDGRID_FROM` provisoire = `kiwanoinc@gmail.com` ; le compte n'a **plus de Single
-  Sender vérifié** (un test l'a défait) → **re-vérifier un expéditeur avant tout envoi réel**.
-  TODO prod : authentifier le domaine Prestige (SPF/DKIM) + `SENDGRID_FROM=no-reply@<domaine>`.
+- **📧 Resend (API HTTP)** — migré de SendGrid le 2026-10-13. Env : `RESEND_API_KEY` +
+  `MAIL_FROM`. ✅ Le TODO « authentifier le domaine + expéditeur sur le domaine » est **clos
+  par la migration** : `prestigelocations.ca` est vérifié chez Resend (DKIM
+  `resend._domainkey`, SPF + MX de retour sur `send.`), et `MAIL_FROM` est désormais une
+  adresse du domaine. L'expéditeur Gmail provisoire (`kiwanoinc@gmail.com`) disparaît — Resend
+  n'envoie que depuis un domaine possédé, donc le bricolage « Single Sender » n'existe plus.
+  **Pourquoi migrer** : SendGrid n'a plus d'offre gratuite depuis mai 2025 ; l'essai de
+  60 jours expire et l'API refuse alors *tout* envoi avec un 401 « Maximum credits exceeded »
+  (un état de compte, pas une mauvaise clé). C'est exactement ce qui a coupé le courriel de
+  l'autre projet. Resend : 3 000/mois, 100/jour, gratuit.
+  **Gain DMARC** : le domaine est en `p=quarantine` avec alignement souple ; un envoi signé
+  DKIM par le domaine lui-même s'aligne, ce qu'une adresse Gmail empruntée ne faisait jamais.
+  ⚠️ Reste à faire côté exploitation : poser `RESEND_API_KEY` et `MAIL_FROM` dans le `.env`
+  de prod, puis `npm run prod restart`. Non vérifié de bout en bout (aucun envoi réel fait).
 - **🧹 BD dev** : données de test accumulées (demandes/commandes #5–8, prix Mini-pelle 85 $,
   réglages `pricing`/`branding` testés) — purger via re-seed si gênant (`npm run db:setup`).
 

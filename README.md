@@ -82,7 +82,7 @@ Les variables `VITE_*` sont **bakées au build** (publiques, jamais de secret).
 | `VITE_BASE_URL` | URL publique (prod : `https://prestigelocations.ca`) — sitemap/hreflang/og |
 | `VITE_IMAGEKIT_URL_ENDPOINT` | Endpoint public ImageKit (vide = photos bundlées) |
 | `IMAGEKIT_PUBLIC_KEY` / `IMAGEKIT_PRIVATE_KEY` / `IMAGEKIT_FOLDER` | Clés ImageKit (secrets) + dossier racine |
-| `SENDGRID_API_KEY` / `SENDGRID_FROM` | Envoi des notifications (expéditeur vérifié requis) |
+| `RESEND_API_KEY` / `MAIL_FROM` | Envoi des notifications (Resend ; `MAIL_FROM` doit être sur un domaine vérifié) |
 | `SITE_MODE` | `basic` (défaut) ou `advanced` — voir ci-dessous |
 | `ENV` | `prod` (défaut) ou `dev` — aides de test ; voir ci-dessous |
 | `VITE_THEME_TWEAKER` | `1` = panneau de réglage du thème sur le site public (tests) |
@@ -161,7 +161,7 @@ sur l'hôte** (un serveur Postgres partagé, idéalement **une base par site**).
    docker compose --env-file .env -f infra/docker-compose.prod.yml up -d --build
    ```
    Autres actions : `npm run prod restart` (recrée le conteneur après un changement de
-   `.env` — ex. `SENDGRID_FROM` —, sans rebuild), `npm run prod logs` (suivi des logs),
+   `.env` — ex. `MAIL_FROM` —, sans rebuild), `npm run prod logs` (suivi des logs),
    `npm run prod down` (arrêt).
 4. **Après import** : changer le mot de passe admin (Admin › Mon compte).
 5. **Exposer le site** :

@@ -7,16 +7,20 @@
 ## Fait (2026-07-11)
 
 - **Fournisseur : SendGrid (API HTTP)**, comme le projet `nanopods-house` (Maisonnovatio).
-  `email.ts` fait un `fetch` direct vers `https://api.sendgrid.com/v3/mail/send` (202 = succès) —
+  `email.ts` fait un `fetch` direct vers `https://api.resend.com/emails` (200 = succès ; c'était
+  202 chez SendGrid, seul écart de contrat de la migration du 2026-10-13) —
   **plus de nodemailer, plus de SMTP** (dépendance retirée du `package.json`). Node 22 fournit
   `fetch` global. Port 443 sortant, rien à ouvrir côté serveur.
 - **Module** : `sendMail({to,subject,text,html})` bas niveau, `notifyAdmin` interne, et un
   helper par événement **`notifyNewRequest(payload)`**. `public.ts` appelle
-  `void notifyNewRequest({...})` (fire-and-forget). Best-effort : une erreur SendGrid est
+  `void notifyNewRequest({...})` (fire-and-forget). Best-effort : une erreur Resend est
   journalisée (`console.warn`), jamais remontée — la demande reste enregistrée.
-- **Config** (env) : `SENDGRID_API_KEY` + `SENDGRID_FROM`. Vide → log, aucun envoi (dev par
-  défaut). Destinataire = courriel des Coordonnées (BD), jamais en dur. `SENDGRID_FROM` doit
-  être un Single Sender vérifié ou sur un domaine authentifié (SPF/DKIM).
+- **Config** (env) : `RESEND_API_KEY` + `MAIL_FROM`. Vide → log, aucun envoi (dev par
+  défaut). Destinataire = courriel des Coordonnées (BD), jamais en dur. `MAIL_FROM` doit être
+  sur un **domaine vérifié chez Resend** — `prestigelocations.ca` l'est. Une adresse Gmail ne
+  fonctionne plus : Resend n'envoie que depuis un domaine possédé, et répond 403 sinon.
+  Les deux refus à connaître : **403** = domaine non vérifié ou `MAIL_FROM` hors domaine ;
+  **429** = quota quotidien (100/jour) atteint, réinitialisé à minuit UTC.
 - **Gabarit HTML sobre + repli texte** (`content` = text/plain puis text/html) : en-tête
   sombre + accent doré, tableau libellé/valeur, bouton « Traiter dans l'administration ».
   Entrées utilisateur **échappées** (anti-injection). Libellés en français ; langue du

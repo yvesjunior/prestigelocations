@@ -1,53 +1,69 @@
-// Envoi de courriels via l'API HTTP de SendGrid — importé dynamiquement côté
+// Envoi de courriels via l'API HTTP de Resend — importé dynamiquement côté
 // serveur uniquement. Best-effort : la BD est la source de vérité (la demande
 // est toujours enregistrée) ; le courriel n'est qu'une notification. Clé API
 // absente (dev) → simple ligne de log, jamais d'erreur remontée.
+//
+// Migré de SendGrid le 2026-10-13. SendGrid n'a plus d'offre gratuite depuis
+// mai 2025 : l'essai de 60 jours expire et l'API refuse alors TOUT envoi avec
+// un 401 « Maximum credits exceeded » — un état de compte, pas une mauvaise
+// clé, donc rien qu'un correctif logiciel puisse régler. Resend offre
+// 3 000 courriels/mois (100/jour), largement au-dessus du volume d'ici.
+//
+// Conséquence visible : l'expéditeur n'est plus une adresse Gmail. Resend
+// n'envoie que depuis un domaine qu'on possède, donc MAIL_FROM doit être sur
+// prestigelocations.ca (déjà vérifié chez Resend : enregistrements sur
+// send.prestigelocations.ca + resend._domainkey). C'est un gain, pas une
+// contrainte : le DMARC du domaine est en p=quarantine avec alignement
+// souple, et un envoi signé DKIM par le domaine lui-même passe, là où une
+// adresse Gmail empruntée ne s'alignait jamais.
 import { BASE_URL } from "@/lib/site";
 import { loadContact } from "./public";
 
-const SENDGRID_ENDPOINT = "https://api.sendgrid.com/v3/mail/send";
+const RESEND_ENDPOINT = "https://api.resend.com/emails";
 // Nom d'expéditeur affiché dans les boîtes de réception.
 const FROM_NAME = "Prestige Locations";
 
 function mailConfig() {
-  const apiKey = process.env.SENDGRID_API_KEY;
-  // L'adresse d'expédition doit être un « Single Sender » vérifié ou sur un
-  // domaine authentifié chez SendGrid (SPF/DKIM), sinon le courriel part en spam.
-  const from = process.env.SENDGRID_FROM;
+  const apiKey = process.env.RESEND_API_KEY;
+  // L'adresse d'expédition doit être sur un domaine vérifié chez Resend,
+  // sinon l'API répond 403 et refuse l'envoi.
+  const from = process.env.MAIL_FROM;
   if (!apiKey || !from) return null;
   return { apiKey, from };
 }
 
 type MailInput = { to: string; subject: string; text: string; html?: string };
 
-/** Envoi bas niveau, best-effort. SendGrid non configuré → log, jamais d'erreur. */
+/** Envoi bas niveau, best-effort. Resend non configuré → log, jamais d'erreur. */
 async function sendMail({ to, subject, text, html }: MailInput): Promise<void> {
   const cfg = mailConfig();
   if (!cfg) {
-    console.info(`Courriel non configuré (SENDGRID_*) — envoi ignoré : ${subject}`);
+    console.info(`Courriel non configuré (RESEND_API_KEY / MAIL_FROM) — envoi ignoré : ${subject}`);
     return;
   }
   try {
-    // Ordre imposé par SendGrid : text/plain avant text/html.
-    const content: { type: string; value: string }[] = [{ type: "text/plain", value: text }];
-    if (html) content.push({ type: "text/html", value: html });
-    const res = await fetch(SENDGRID_ENDPOINT, {
+    const res = await fetch(RESEND_ENDPOINT, {
       method: "POST",
       headers: {
         authorization: `Bearer ${cfg.apiKey}`,
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        personalizations: [{ to: [{ email: to }] }],
-        from: { email: cfg.from, name: FROM_NAME },
+        from: `${FROM_NAME} <${cfg.from}>`,
+        to: [to],
         subject,
-        content,
+        // `text` seul suffit ; `html` est ajouté quand on en a un.
+        text,
+        ...(html ? { html } : {}),
       }),
     });
-    // SendGrid répond 202 Accepted en cas de succès.
+    // Resend répond 200 avec l'identifiant du message en cas de succès
+    // (SendGrid répondait 202 — c'est le seul écart de contrat ici).
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
-      console.warn(`Courriel « ${subject} » refusé par SendGrid (${res.status}) : ${detail}`);
+      // 403 = domaine non vérifié ou MAIL_FROM hors de ce domaine ;
+      // 429 = quota quotidien atteint (réinitialisé à minuit UTC).
+      console.warn(`Courriel « ${subject} » refusé par Resend (${res.status}) : ${detail}`);
     }
   } catch (err) {
     console.warn(`Courriel « ${subject} » non envoyé :`, err);

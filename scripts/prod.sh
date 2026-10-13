@@ -7,7 +7,7 @@
 #   ./scripts/prod.sh up           # idem (défaut)
 #   ./scripts/prod.sh down         # arrêt de la pile
 #   ./scripts/prod.sh logs         # suivi des logs du conteneur web
-#   ./scripts/prod.sh restart      # recrée le conteneur (relit .env, ex. SENDGRID_FROM)
+#   ./scripts/prod.sh restart      # recrée le conteneur (relit .env, ex. MAIL_FROM)
 #
 # ⚠️ .env doit contenir un DATABASE_URL pointant vers le Postgres de l'hôte et ENV=prod.
 set -euo pipefail
@@ -32,7 +32,7 @@ case "$ACTION" in
     ;;
   restart)
     # Recrée le conteneur sans rebuild : suffit pour un simple changement de .env
-    # (SENDGRID_FROM, SITE_MODE, ENV…). `restart` seul ne relit PAS le .env.
+    # (MAIL_FROM, SITE_MODE, ENV…). `restart` seul ne relit PAS le .env.
     "${COMPOSE[@]}" up -d --remove-orphans
     ;;
   down)
