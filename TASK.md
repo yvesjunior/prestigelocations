@@ -30,7 +30,18 @@
 
 > **Reprendre ici.** Mettre à jour ce bloc à chaque session (2 lignes max).
 
-- **▶ SESSION 2026-07-28 — REPRENDRE ICI.**
+- **▶ SESSION 2026-10-20 — REPRENDRE ICI. 🚀 PROD EN LIGNE.**
+  Le site est **déployé en production** sur `prestigelocations.ca` → **Phase 5 terminée** (voir
+  plus bas ; la topologie livrée diffère du plan d'origine : pas de Caddy ni GHCR, mais un
+  **tunnel Cloudflare nommé** + Postgres de l'hôte).
+  **VM de prod** : `ssh yves@192.168.2.56` (IP **LAN privée** → exposition par tunnel Cloudflare,
+  pas d'IP publique), conteneur `prestige-locations-web-1`. Topologie = `infra/docker-compose.prod.yml`
+  (web seul, `network_mode: host`, **Postgres de l'hôte** sur `localhost:5432`, Nitro sur `WEB_PORT`).
+  Déploiement/relance via `scripts/prod.sh` (`up`=build+recréer, `restart`=relit `.env`, `down`, `logs`).
+  **Secrets** (clé Resend, mot de passe DB) dans le `.env` **sur la VM** — jamais dans ce dépôt (public).
+  **Courriel** : migré **SendGrid → Resend**. À revérifier côté Resend que les notifs admin
+  arrivent en boîte de réception (ancien souci M365 : `From == To` `info@…` → Junk/Quarantaine).
+- **▶ SESSION 2026-07-28.** *(SEO désormais commité et poussé — ce bloc était « NON COMMITÉ ».)*
   **SEO tags complétés (NON COMMITÉ)** : `og:image`/`twitter:image` (1re diapo héro ImageKit 1200×630,
   repli diapo bundlée), `og:url`/`og:locale`/`og:site_name` (racine + `pageHead` + pages catégories),
   `noindex,nofollow` sur `/admin` (layout). **JSON-LD enrichi (`lib/seo.ts`)** : BreadcrumbList +
@@ -951,7 +962,19 @@ aboutit à un site fonctionnel seedé.
 
 ---
 
-## Phase 5 — Hébergement et mise en ligne
+## Phase 5 — Hébergement et mise en ligne — ✅ FAIT (prod en ligne 2026-10)
+
+> **Le site tourne en production** sur `prestigelocations.ca`. La solution livrée **diffère du
+> plan ci-dessous** (écrit « à blanc » quand le serveur/domaine étaient encore 🧍) :
+> - **Pas de Caddy ni de registre GHCR** : build local + `scripts/prod.sh` sur la VM, exposition
+>   par **tunnel Cloudflare nommé** (TLS géré par Cloudflare), pas d'IP publique.
+> - **VM** : `ssh yves@192.168.2.56` (IP LAN privée), conteneur `prestige-locations-web-1`.
+> - **DB** : Postgres **de l'hôte** (`localhost:5432`), pas de conteneur `db` en prod ;
+>   `infra/docker-compose.prod.yml` (web seul, `network_mode: host`, `PORT=WEB_PORT`).
+> - **Courriel** : Resend (migré depuis SendGrid).
+> Les scripts/fichiers « plan d'origine » ci-dessous (Caddy, deploy/rollback GHCR, setup ufw)
+> n'ont **pas** été réalisés et ne sont **pas** nécessaires avec cette topologie — gardés pour
+> mémoire / évolution éventuelle vers un serveur public.
 
 **Objectif** : le site tourne sur un serveur public avec TLS, déployable/rollbackable par
 script en une commande.
@@ -990,14 +1013,18 @@ la **livraison des images** (recommandation : GHCR ; alternative sans registre :
 
 ### Tâches
 
-- [ ] 🧍 Domaine commandé + accès SSH au serveur fourni (noter les infos ici).
-- [ ] `setup.sh`, `deploy.sh`, `rollback.sh`, `logs.sh`, `backup.sh`.
-- [ ] `docker-compose.prod.yml` + `Caddyfile`.
-- [ ] DNS + TLS actifs, `BASE_URL` de prod injectée.
-- [ ] `infra/README.md` complet.
+- [x] Domaine `prestigelocations.ca` + VM (`ssh yves@192.168.2.56`, conteneur
+      `prestige-locations-web-1`).
+- [x] Déploiement par `scripts/prod.sh` (up/restart/down/logs) sur la VM. *(deploy/rollback
+      GHCR + setup.sh/backup.sh : non faits — non requis avec le tunnel + build local.)*
+- [x] `infra/docker-compose.prod.yml` (web seul, `network_mode: host`, Postgres de l'hôte).
+      *(Caddyfile : non requis — TLS via tunnel Cloudflare.)*
+- [x] TLS actif (Cloudflare), `VITE_BASE_URL=https://prestigelocations.ca` injectée au build.
+- [ ] `infra/README.md` (topologie prod + runbook) — **pas encore écrit** ; infos dans ce bloc
+      et dans « Prochaine action ».
 
-**Fait quand** : `scripts/deploy.sh` déploie une nouvelle version en une commande depuis le
-poste de dev ; `rollback.sh` restaure la précédente ; HTTPS valide sur le domaine.
+**Fait quand** : ~~`scripts/deploy.sh`…~~ **Le site est en ligne en HTTPS sur le domaine, redéployable
+par `scripts/prod.sh` sur la VM.** ✅
 
 ---
 
