@@ -165,6 +165,52 @@
 - **🧹 BD dev** : données de test accumulées (demandes/commandes #5–8, prix Mini-pelle 85 $,
   réglages `pricing`/`branding` testés) — purger via re-seed si gênant (`npm run db:setup`).
 
+## Réservation & paiement en ligne — évaluation (⏸️ EN PAUSE — ne pas implémenter)
+
+> **⚠️ NE RIEN IMPLÉMENTER de cette fonctionnalité** (réservation, paiement, acompte, taxes,
+> transport, codes promo, factures/contrats, SMS, comptes clients) **tant que le client n'a pas
+> donné son accord explicite et que le prestataire ne l'a pas clairement demandé**. Évaluation et
+> plan technique uniquement — aucune supposition. *(Volet commercial : prix proposé / accord suivis
+> hors de ce dépôt public.)*
+
+**Contexte** : le site est déjà en production. Le propriétaire a fourni un cahier des besoins
+(23 décisions — `Prestige_Locations_Cahier_Reservation_En_Ligne.pdf`, 2026-10-21). Objectif : ajouter
+réservation + paiement en ligne + factures.
+
+**Décisions prises (discussion 2026-10)** :
+- **Sur-mesure dans l'app existante avec Stripe.** Booqable évalué puis **écarté** (cahier point 16 :
+  gestion dans l'admin du site ; Booqable posséderait le catalogue/admin).
+- **Acompte 25 %** du total, déduit du total (solde 75 %) ; remboursable si annulation ≥ 48 h avant le
+  début, sinon conservé ; no-show → réservation annulée, acompte conservé.
+- **Prélèvement de l'acompte = après l'approbation manuelle** (lien de paiement ; réservation ferme
+  seulement une fois payée). Approbation manuelle conservée (auto-confirmation possible plus tard).
+- Taxes **TPS 5 % + TVQ 9,975 %** séparées. Transport **2,75 $/km aller-retour** selon la distance.
+  Bilingue FR/EN (site + courriels + SMS + factures/contrats). **Comptes clients optionnels**
+  (connexion sans mot de passe) — ajout hors cahier.
+
+**Périmètre à construire (état des lieux — ~33 jours-personne)** :
+1. Conception / spec — 2 j
+2. Données & moteur de prix (migrations, calcul durée→palier, TPS/TVQ) — 3 j
+3. Parcours public (panier, dates, collecte courriel+cellulaire+adresse, récap live) — 3 j
+4. Blocage de dates + statuts (anti double-réservation) — 2 j
+5. Stripe — acompte 25 % par lien + webhook + remboursement — 3 j
+6. Admin réservations (approbation→lien, suivi payé/solde) — 2 j
+7. Paiement du solde en ligne — 1 j
+8. Transport / distance (géocodage + A/R × 2,75 $/km) — 2 j · *dép. API carto*
+9. Factures PDF bilingues — 2 j
+10. Courriels auto bilingues — 2 j · *dép. Resend*
+11. Contrats PDF + signature électronique — 3 j
+12. Codes promo & rabais — 2 j
+13. SMS automatiques — 2 j · *dép. fournisseur SMS*
+14. Comptes clients (optionnels, sans mot de passe) — 2 j
+15. Tests & déploiement — 2 j
+
+**Dépendances externes (coûts récurrents client)** : API cartographie (distance), Stripe
+(~2,9 % + 0,30 $ CAD), Resend (courriel), fournisseur SMS (ex. Twilio).
+
+**État du code aujourd'hui** : flux demande → validation admin → commande ; **aucun code de paiement** ;
+migrations à 0010 ; colonnes tarifs multi-paliers présentes. (État des lieux détaillé livré en PDF.)
+
 ## État actuel
 
 - Site vitrine bilingue FR/EN fonctionnel en développement (TanStack Start / React 19, SSR,
